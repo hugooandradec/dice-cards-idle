@@ -1,9 +1,12 @@
-const CACHE_NAME = "dice-cards-idle-v3";
+const CACHE_NAME = "dice-cards-idle-v4";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
+  "./shop.html",
   "./style.css",
-  "./app.js",
+  "./js/app.js",
+  "./js/shop.js",
+  "./js/gameData.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
