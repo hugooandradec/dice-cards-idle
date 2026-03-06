@@ -4,61 +4,64 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dice & Cards Idle</title>
-
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#6a1b9a" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Dice & Cards Idle</h1>
+  <main class="container">
+    <h1 class="title">Dice & Cards Idle</h1>
 
-    <div class="card main-card">
-      <div class="ouro-area">
-        <p>Ouro</p>
-        <h2 id="gold">0</h2>
+    <section class="panel main-panel">
+      <div class="gold-box">
+        <span class="label">Ouro</span>
+        <strong id="goldValue">0</strong>
       </div>
 
-      <div id="dice" class="dice">1</div>
-
-      <p class="gain-line">
-        <span id="gainText">+0 ouro</span>
-      </p>
-
-      <div class="main-actions">
-        <button id="rollBtn" class="main-btn">Rolar</button>
-        <button id="shopBtn" class="secondary-btn">Loja</button>
+      <div class="dice-result-area">
+        <div id="mainRollResult" class="dice-result">-</div>
+        <div id="rollGain" class="roll-gain">+0 ouro</div>
+        <div id="rollBreakdown" class="roll-breakdown"></div>
       </div>
 
-      <p class="version">Protótipo 0.3</p>
-    </div>
-
-    <div class="card">
-      <h2>Cartas Ativas</h2>
-
-      <div class="card-slots">
-        <div class="slot" id="slot1">Slot 1</div>
-
-        <div class="slot locked" id="slot2">
-          Slot 2
-          <br />
-          <span>150 ouro</span>
-        </div>
-
-        <div class="slot locked" id="slot3">
-          Slot 3
-          <br />
-          <span>400 ouro</span>
-        </div>
+      <div class="actions">
+        <button id="rollButton" class="btn btn-primary">Rolar</button>
+        <a href="./shop.html" class="btn btn-secondary">Loja</a>
       </div>
+
+      <div class="version">Protótipo 0.3</div>
+    </section>
+
+    <section class="panel">
+      <div class="section-header">
+        <h2>Dados Ativos</h2>
+        <span class="section-subtitle">Todos os dados equipados rolam juntos</span>
+      </div>
+
+      <div id="diceSlots" class="dice-slots"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-header">
+        <h2>Cartas Ativas</h2>
+        <span class="section-subtitle">Até 5 cartas equipadas</span>
+      </div>
+
+      <div id="cardSlots" class="card-slots"></div>
+    </section>
+  </main>
+
+  <div id="equipModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Equipar</h3>
+        <button id="closeModalButton" class="modal-close" aria-label="Fechar">×</button>
+      </div>
+
+      <div id="modalList" class="modal-list"></div>
     </div>
   </div>
 
   <script type="module" src="./js/app.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js");
-    }
-  </script>
 </body>
 </html>

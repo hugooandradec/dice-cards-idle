@@ -1,333 +1,428 @@
-import {
-  createInitialGameState,
-  getEquippedCards
-} from "./gameData.js";
+import { createInitialGameState, DICE_DATA, CARD_DATA } from "./gameData.js";
 
-const STORAGE_KEY = "diceCardsIdle_v04";
+const SAVE_KEY = "dice_cards_idle_save";
 
-const goldEl = document.getElementById("gold");
-const diceEl = document.getElementById("dice");
-const gainTextEl = document.getElementById("gainText");
-const rollBtn = document.getElementById("rollBtn");
-const shopBtn = document.getElementById("shopBtn");
+let state = loadGame();
 
-const slot1 = document.getElementById("slot1");
-const slot2 = document.getElementById("slot2");
-const slot3 = document.getElementById("slot3");
+const goldValue = document.getElementById("goldValue");
+const mainRollResult = document.getElementById("mainRollResult");
+const rollGain = document.getElementById("rollGain");
+const rollBreakdown = document.getElementById("rollBreakdown");
+const rollButton = document.getElementById("rollButton");
 
-let game = loadGame();
-let isRolling = false;
-let autoRollInterval = null;
-let diceAnimationInterval = null;
+const diceSlotsEl = document.getElementById("diceSlots");
+const cardSlotsEl = document.getElementById("cardSlots");
+
+const equipModal = document.getElementById("equipModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalList = document.getElementById("modalList");
+const closeModalButton = document.getElementById("closeModalButton");
+
+let currentModalContext = null;
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return createInitialGameState();
 
     const parsed = JSON.parse(raw);
-    return mergeWithInitialState(parsed);
+
+    return {
+      ...createInitialGameState(),
+      ...parsed
+    };
   } catch {
     return createInitialGameState();
   }
 }
 
-function mergeWithInitialState(save) {
-  const base = createInitialGameState();
-
-  return {
-    ...base,
-    ...save,
-    resources: {
-      ...base.resources,
-      ...(save.resources || {})
-    },
-    stats: {
-      ...base.stats,
-      ...(save.stats || {})
-    },
-    progression: {
-      ...base.progression,
-      ...(save.progression || {})
-    },
-    inventory: {
-      dice: Array.isArray(save.inventory?.dice) ? save.inventory.dice : base.inventory.dice,
-      cards: Array.isArray(save.inventory?.cards) ? save.inventory.cards : base.inventory.cards
-    },
-    equipped: {
-      diceSlots: Array.isArray(save.equipped?.diceSlots) ? save.equipped.diceSlots : base.equipped.diceSlots,
-      cardSlots: Array.isArray(save.equipped?.cardSlots) ? save.equipped.cardSlots : base.equipped.cardSlots
-    },
-    slots: {
-      ...base.slots,
-      ...(save.slots || {})
-    },
-    collection: {
-      ...base.collection,
-      ...(save.collection || {}),
-      milestones: {
-        ...base.collection.milestones,
-        ...(save.collection?.milestones || {})
-      },
-      bonuses: {
-        ...base.collection.bonuses,
-        ...(save.collection?.bonuses || {})
-      }
-    },
-    ui: {
-      ...base.ui,
-      ...(save.ui || {})
-    }
-  };
-}
-
 function saveGame() {
-  game.stats.lastSaveAt = Date.now();
-  game.stats.lastSeenAt = Date.now();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
 }
 
-function applyOfflineProgress() {
-  if (!game.progression.offlineGainUnlocked) return;
-
-  const now = Date.now();
-  const elapsedMs = now - (game.stats.lastSaveAt || now);
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
-  const cappedSeconds = Math.min(elapsedSeconds, game.progression.maxOfflineSeconds || 28800);
-
-  const gain = Math.floor(cappedSeconds * 0.5);
-  if (gain > 0) {
-    game.resources.gold += gain;
-    game.stats.totalGoldEarned += gain;
-    game.ui.lastGain = gain;
-  }
+function getRarityClass(rarity) {
+  return `rarity-${rarity || "common"}`;
 }
 
-function randomRoll(sides) {
+function getOwnedDieByUid(uid) {
+  return state.inventory.dice.find((item) => item.uid === uid) || null;
+}
+
+function getOwnedCardByUid(uid) {
+  return state.inventory.cards.find((item) => item.uid === uid) || null;
+}
+
+function getEquippedCardEffects() {
+  return state.equippedCards
+    .map((uid) => getOwnedCardByUid(uid))
+    .filter(Boolean)
+    .map((card) => CARD_DATA[card.baseId]?.effect)
+    .filter(Boolean);
+}
+
+function renderTop() {
+  goldValue.textContent = Math.floor(state.gold);
+  mainRollResult.textContent = state.lastRollTotal ?? "-";
+  rollGain.textContent = `+${Math.floor(state.lastRollGain || 0)} ouro`;
+  rollBreakdown.textContent = state.lastRollBreakdown || "";
+}
+
+function renderDiceSlots() {
+  diceSlotsEl.innerHTML = "";
+
+  state.equippedDice.forEach((uid, index) => {
+    const slot = document.createElement("div");
+    slot.className = "dice-slot";
+
+    if (uid) {
+      const dieItem = getOwnedDieByUid(uid);
+      const dieData = dieItem ? DICE_DATA[dieItem.baseId] : null;
+
+      slot.innerHTML = `
+        <div class="dice-slot-header">
+          <span class="slot-label">Slot ${index + 1}</span>
+          <span class="rarity-badge ${getRarityClass(dieData?.rarity)}">${formatRarity(dieData?.rarity)}</span>
+        </div>
+
+        <div class="dice-face">${dieData?.sides || "?"}</div>
+
+        <div class="slot-name">${dieData?.name || "Dado"}</div>
+        <div class="slot-desc">${dieData?.description || ""}</div>
+
+        <button class="slot-mini-btn unequip" data-dice-slot="${index}" data-action="unequip-die">
+          Desequipar
+        </button>
+      `;
+    } else {
+      slot.innerHTML = `
+        <div class="dice-slot-header">
+          <span class="slot-label">Slot ${index + 1}</span>
+          <span class="rarity-badge">Vazio</span>
+        </div>
+
+        <div class="dice-face">?</div>
+        <div class="slot-name slot-empty">Sem dado</div>
+        <div class="slot-desc slot-empty">Nenhum dado equipado neste slot.</div>
+
+        <button class="slot-mini-btn equip" data-dice-slot="${index}" data-action="open-dice-modal">
+          Equipar
+        </button>
+      `;
+    }
+
+    diceSlotsEl.appendChild(slot);
+  });
+}
+
+function renderCardSlots() {
+  cardSlotsEl.innerHTML = "";
+
+  state.equippedCards.forEach((uid, index) => {
+    const slot = document.createElement("div");
+    slot.className = "card-slot";
+
+    if (uid) {
+      const cardItem = getOwnedCardByUid(uid);
+      const cardData = cardItem ? CARD_DATA[cardItem.baseId] : null;
+
+      slot.innerHTML = `
+        <div class="card-slot-header">
+          <span class="slot-label">Slot ${index + 1}</span>
+          <span class="rarity-badge ${getRarityClass(cardData?.rarity)}">${formatRarity(cardData?.rarity)}</span>
+        </div>
+
+        <div class="card-art">${cardData?.name || "Carta"}</div>
+
+        <div class="slot-name">${cardData?.name || "Carta"}</div>
+        <div class="slot-desc">${cardData?.description || ""}</div>
+
+        <button class="slot-mini-btn unequip" data-card-slot="${index}" data-action="unequip-card">
+          Desequipar
+        </button>
+      `; 
+    } else {
+      slot.innerHTML = `
+        <div class="card-slot-header">
+          <span class="slot-label">Slot ${index + 1}</span>
+          <span class="rarity-badge">Vazio</span>
+        </div>
+
+        <div class="card-art slot-empty">Sem Carta</div>
+
+        <div class="slot-name slot-empty">Slot vazio</div>
+        <div class="slot-desc slot-empty">Clique em equipar para escolher uma carta do inventário.</div>
+
+        <button class="slot-mini-btn equip" data-card-slot="${index}" data-action="open-card-modal">
+          Equipar
+        </button>
+      `;
+    }
+
+    cardSlotsEl.appendChild(slot);
+  });
+}
+
+function renderAll() {
+  renderTop();
+  renderDiceSlots();
+  renderCardSlots();
+
+  const hasAnyDie = state.equippedDice.some(Boolean);
+  rollButton.disabled = !hasAnyDie;
+  rollButton.style.opacity = hasAnyDie ? "1" : "0.6";
+  rollButton.style.cursor = hasAnyDie ? "pointer" : "not-allowed";
+}
+
+function formatRarity(rarity) {
+  const map = {
+    common: "Comum",
+    uncommon: "Incomum",
+    rare: "Rara",
+    epic: "Épica",
+    legendary: "Lendária"
+  };
+  return map[rarity] || "Comum";
+}
+
+function rollDie(sides) {
   return Math.floor(Math.random() * sides) + 1;
 }
 
-function getEquippedDiceSides() {
-  const equippedDice = game.equipped.diceSlots
-    .map((uid) => game.inventory.dice.find((item) => item.uid === uid))
+function processRoll() {
+  const equippedDiceItems = state.equippedDice
+    .map((uid) => getOwnedDieByUid(uid))
     .filter(Boolean);
 
-  if (!equippedDice.length) return 6;
+  if (!equippedDiceItems.length) return;
 
-  const firstDie = equippedDice[0];
-  const baseId = firstDie.baseId;
+  const effects = getEquippedCardEffects();
 
-  if (baseId === "dice_d8") return 8;
-  if (baseId === "dice_d10") return 10;
-  return 6;
-}
+  let flatPerDie = 0;
+  let critChance = 0;
+  let goldMultiplier = 1;
+  let rerollOnOneCount = 0;
 
-function calculateFinalResult(roll) {
-  let result = roll;
-  const equippedCards = getEquippedCards(game);
-
-  for (const card of equippedCards) {
-    if (card.baseId === "card_luck") {
-      result += 1;
-    }
-
-    if (card.baseId === "card_crit" && roll === getEquippedDiceSides()) {
-      result *= 2;
-    }
-
-    if (card.baseId === "card_even" && roll % 2 === 0) {
-      result *= 2;
-    }
-  }
-
-  result += game.collection.bonuses.rollBonus || 0;
-  result = Math.floor(result * (1 + (game.collection.bonuses.goldMultiplier || 0)));
-
-  return result;
-}
-
-function updateSlotsUI() {
-  const equippedCards = getEquippedCards(game);
-
-  const labels = game.equipped.cardSlots.map((uid, index) => {
-    if (!uid) return `Slot ${index + 1}`;
-
-    const card = equippedCards.find((item) => item.uid === uid) ||
-      game.inventory.cards.find((item) => item.uid === uid);
-
-    if (!card) return `Slot ${index + 1}`;
-
-    if (card.baseId === "card_luck") return "Sorte";
-    if (card.baseId === "card_crit") return "Crítico";
-    if (card.baseId === "card_even") return "Par";
-    return `Slot ${index + 1}`;
+  effects.forEach((effect) => {
+    if (effect.type === "flatPerDie") flatPerDie += effect.value;
+    if (effect.type === "critChance") critChance += effect.value;
+    if (effect.type === "goldMultiplier") goldMultiplier *= effect.value;
+    if (effect.type === "rerollOnOne") rerollOnOneCount += effect.value;
   });
 
-  slot1.classList.remove("locked");
-  slot1.innerHTML = labels[0] || "Slot 1";
+  const breakdownParts = [];
+  let total = 0;
+  let rerollsLeft = rerollOnOneCount;
 
-  if (game.slots.cardUnlocked >= 2) {
-    slot2.classList.remove("locked");
-    slot2.innerHTML = labels[1] || "Slot 2";
-  } else {
-    slot2.classList.add("locked");
-    slot2.innerHTML = "Slot 2<br><span>150 ouro</span>";
-  }
+  equippedDiceItems.forEach((dieItem, idx) => {
+    const dieData = DICE_DATA[dieItem.baseId];
+    if (!dieData) return;
 
-  if (game.slots.cardUnlocked >= 3) {
-    slot3.classList.remove("locked");
-    slot3.innerHTML = labels[2] || "Slot 3";
-  } else {
-    slot3.classList.add("locked");
-    slot3.innerHTML = "Slot 3<br><span>400 ouro</span>";
-  }
-}
+    let result = rollDie(dieData.sides);
+    const original = result;
 
-function updateUI() {
-  goldEl.textContent = game.resources.gold;
-  diceEl.textContent = game.ui.displayFace;
-  gainTextEl.textContent = `+${game.ui.lastGain} ouro`;
-  updateSlotsUI();
-}
-
-function animateDice(finalFace, sides, onComplete) {
-  if (diceAnimationInterval) {
-    clearInterval(diceAnimationInterval);
-    diceAnimationInterval = null;
-  }
-
-  let steps = 0;
-  const totalSteps = 9;
-
-  diceAnimationInterval = setInterval(() => {
-    diceEl.textContent = randomRoll(sides);
-    steps++;
-
-    if (steps >= totalSteps) {
-      clearInterval(diceAnimationInterval);
-      diceAnimationInterval = null;
-      diceEl.textContent = finalFace;
-      onComplete();
+    if (result === 1 && rerollsLeft > 0) {
+      result = rollDie(dieData.sides);
+      rerollsLeft -= 1;
+      breakdownParts.push(`${dieData.name} ${idx + 1}: ${original}↺${result}`);
+    } else {
+      breakdownParts.push(`${dieData.name} ${idx + 1}: ${result}`);
     }
-  }, 70);
-}
 
-function rollDice() {
-  if (isRolling) return;
-
-  const sides = getEquippedDiceSides();
-
-  isRolling = true;
-  rollBtn.disabled = true;
-
-  const roll = randomRoll(sides);
-
-  animateDice(roll, sides, () => {
-    const finalResult = calculateFinalResult(roll);
-
-    game.ui.displayFace = roll;
-    game.ui.lastGain = finalResult;
-    game.resources.gold += finalResult;
-    game.stats.totalGoldEarned += finalResult;
-    game.stats.totalRolls += 1;
-
-    updateUI();
-    saveGame();
-
-    isRolling = false;
-    rollBtn.disabled = false;
+    total += result + flatPerDie;
   });
-}
 
-function stopAutoRoll() {
-  if (autoRollInterval) {
-    clearInterval(autoRollInterval);
-    autoRollInterval = null;
-  }
-}
-
-function startAutoRoll() {
-  stopAutoRoll();
-
-  if (!game.progression.autoRollUnlocked) return;
-
-  autoRollInterval = setInterval(() => {
-    if (!isRolling) {
-      rollDice();
-    }
-  }, game.progression.autoRollIntervalMs || 2000);
-}
-
-function unlockSlot(slotNumber) {
-  if (slotNumber === 2 && game.slots.cardUnlocked < 2 && game.resources.gold >= 150) {
-    game.resources.gold -= 150;
-    game.slots.cardUnlocked = 2;
-    return true;
+  let critTriggered = false;
+  if (Math.random() < critChance) {
+    total *= 2;
+    critTriggered = true;
   }
 
-  if (slotNumber === 3 && game.slots.cardUnlocked < 3 && game.resources.gold >= 400) {
-    game.resources.gold -= 400;
-    game.slots.cardUnlocked = 3;
-    return true;
-  }
+  total = Math.floor(total * goldMultiplier);
 
-  return false;
+  state.gold += total;
+  state.lastRollTotal = total;
+  state.lastRollGain = total;
+
+  const extraParts = [];
+  if (flatPerDie > 0) extraParts.push(`+${flatPerDie} por dado`);
+  if (goldMultiplier > 1) extraParts.push(`x${goldMultiplier.toFixed(2)} ouro`);
+  if (critTriggered) extraParts.push("CRÍTICO!");
+
+  state.lastRollBreakdown = [
+    breakdownParts.join(" | "),
+    extraParts.join(" | ")
+  ].filter(Boolean).join(" • ");
+
+  saveGame();
+  renderAll();
 }
 
-function cycleCardInSlot(slotIndex) {
-  const availableCards = game.inventory.cards.slice();
-  if (!availableCards.length) return false;
-
-  const currentUid = game.equipped.cardSlots[slotIndex];
-  const cycleOptions = [null, ...availableCards.map((card) => card.uid)];
-  const currentIndex = cycleOptions.indexOf(currentUid);
-  const nextIndex = (currentIndex + 1) % cycleOptions.length;
-  const nextUid = cycleOptions[nextIndex];
-
-  if (nextUid && game.equipped.cardSlots.includes(nextUid)) {
-    const otherIndex = game.equipped.cardSlots.indexOf(nextUid);
-    game.equipped.cardSlots[otherIndex] = currentUid;
-  }
-
-  game.equipped.cardSlots[slotIndex] = nextUid;
-  return true;
+function getAvailableCardsToEquip() {
+  const equippedSet = new Set(state.equippedCards.filter(Boolean));
+  return state.inventory.cards.filter((card) => !equippedSet.has(card.uid));
 }
 
-function handleSlotClick(slotNumber) {
-  const slotIndex = slotNumber - 1;
+function getAvailableDiceToEquip() {
+  const equippedSet = new Set(state.equippedDice.filter(Boolean));
+  return state.inventory.dice.filter((die) => !equippedSet.has(die.uid));
+}
 
-  if (game.slots.cardUnlocked < slotNumber) {
-    const unlocked = unlockSlot(slotNumber);
-    if (unlocked) {
-      updateUI();
-      saveGame();
-    }
+function openCardModal(slotIndex) {
+  currentModalContext = { type: "card", slotIndex };
+  modalTitle.textContent = `Equipar carta no Slot ${slotIndex + 1}`;
+
+  const availableCards = getAvailableCardsToEquip();
+
+  if (!availableCards.length) {
+    modalList.innerHTML = `<div class="empty-modal">Nenhuma carta disponível para equipar.</div>`;
+    equipModal.classList.remove("hidden");
     return;
   }
 
-  const changed = cycleCardInSlot(slotIndex);
-  if (changed) {
-    updateUI();
-    saveGame();
-  }
+  modalList.innerHTML = "";
+
+  availableCards.forEach((cardItem) => {
+    const cardData = CARD_DATA[cardItem.baseId];
+    const cardEl = document.createElement("div");
+    cardEl.className = "modal-card";
+
+    cardEl.innerHTML = `
+      <div class="dice-slot-header">
+        <span class="modal-card-title">${cardData?.name || "Carta"}</span>
+        <span class="rarity-badge ${getRarityClass(cardData?.rarity)}">${formatRarity(cardData?.rarity)}</span>
+      </div>
+
+      <div class="modal-card-desc">${cardData?.description || ""}</div>
+      <button data-equip-card-uid="${cardItem.uid}">Equipar</button>
+    `;
+
+    modalList.appendChild(cardEl);
+  });
+
+  equipModal.classList.remove("hidden");
 }
 
-rollBtn.addEventListener("click", rollDice);
+function openDiceModal(slotIndex) {
+  currentModalContext = { type: "dice", slotIndex };
+  modalTitle.textContent = `Equipar dado no Slot ${slotIndex + 1}`;
 
-shopBtn.addEventListener("click", () => {
-  window.location.href = "./shop.html";
+  const availableDice = getAvailableDiceToEquip();
+
+  if (!availableDice.length) {
+    modalList.innerHTML = `<div class="empty-modal">Nenhum dado disponível para equipar.</div>`;
+    equipModal.classList.remove("hidden");
+    return;
+  }
+
+  modalList.innerHTML = "";
+
+  availableDice.forEach((dieItem) => {
+    const dieData = DICE_DATA[dieItem.baseId];
+    const dieEl = document.createElement("div");
+    dieEl.className = "modal-card";
+
+    dieEl.innerHTML = `
+      <div class="dice-slot-header">
+        <span class="modal-card-title">${dieData?.name || "Dado"}</span>
+        <span class="rarity-badge ${getRarityClass(dieData?.rarity)}">${formatRarity(dieData?.rarity)}</span>
+      </div>
+
+      <div class="modal-card-desc">${dieData?.description || ""}<br><strong>d${dieData?.sides || 6}</strong></div>
+      <button data-equip-dice-uid="${dieItem.uid}">Equipar</button>
+    `;
+
+    modalList.appendChild(dieEl);
+  });
+
+  equipModal.classList.remove("hidden");
+}
+
+function closeModal() {
+  equipModal.classList.add("hidden");
+  currentModalContext = null;
+}
+
+function equipCard(cardUid) {
+  if (!currentModalContext || currentModalContext.type !== "card") return;
+
+  const { slotIndex } = currentModalContext;
+  state.equippedCards[slotIndex] = cardUid;
+
+  saveGame();
+  renderAll();
+  closeModal();
+}
+
+function equipDie(dieUid) {
+  if (!currentModalContext || currentModalContext.type !== "dice") return;
+
+  const { slotIndex } = currentModalContext;
+  state.equippedDice[slotIndex] = dieUid;
+
+  saveGame();
+  renderAll();
+  closeModal();
+}
+
+function unequipCard(slotIndex) {
+  state.equippedCards[slotIndex] = null;
+  saveGame();
+  renderAll();
+}
+
+function unequipDie(slotIndex) {
+  state.equippedDice[slotIndex] = null;
+  saveGame();
+  renderAll();
+}
+
+rollButton.addEventListener("click", processRoll);
+
+cardSlotsEl.addEventListener("click", (event) => {
+  const action = event.target.dataset.action;
+  const slotIndex = Number(event.target.dataset.cardSlot);
+
+  if (action === "open-card-modal") {
+    openCardModal(slotIndex);
+  }
+
+  if (action === "unequip-card") {
+    unequipCard(slotIndex);
+  }
 });
 
-slot1.addEventListener("click", () => handleSlotClick(1));
-slot2.addEventListener("click", () => handleSlotClick(2));
-slot3.addEventListener("click", () => handleSlotClick(3));
+diceSlotsEl.addEventListener("click", (event) => {
+  const action = event.target.dataset.action;
+  const slotIndex = Number(event.target.dataset.diceSlot);
 
-applyOfflineProgress();
+  if (action === "open-dice-modal") {
+    openDiceModal(slotIndex);
+  }
 
-if (!game.ui.displayFace || game.ui.displayFace > getEquippedDiceSides()) {
-  game.ui.displayFace = 1;
-}
+  if (action === "unequip-die") {
+    unequipDie(slotIndex);
+  }
+});
 
-updateUI();
-startAutoRoll();
-setInterval(saveGame, 5000);
+modalList.addEventListener("click", (event) => {
+  const cardUid = event.target.dataset.equipCardUid;
+  const diceUid = event.target.dataset.equipDiceUid;
+
+  if (cardUid) {
+    equipCard(cardUid);
+  }
+
+  if (diceUid) {
+    equipDie(diceUid);
+  }
+});
+
+closeModalButton.addEventListener("click", closeModal);
+
+equipModal.addEventListener("click", (event) => {
+  if (event.target.dataset.closeModal === "true") {
+    closeModal();
+  }
+});
+
+renderAll();
