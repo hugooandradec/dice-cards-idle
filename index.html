@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dice & Cards Idle</title>
+
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      background: #1b1b1b;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    button {
+      background: #6a1b9a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    button:hover {
+      opacity: 0.95;
+    }
+
+    .cards {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      width: 160px;
+      background: #1b1b1b;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .label {
+      color: #bbb;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .small {
+      margin-top: 8px;
+      color: #ccc;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Dice & Cards Idle</h1>
+
+    <div class="panel">
+      <div class="label">Ouro</div>
+      <div class="value" id="gold">0</div>
+
+      <p>Última rolagem: <span id="lastRoll">-</span></p>
+      <p>Resultado final: <span id="result">-</span></p>
+
+      <button id="rollButton">Rolar todos</button>
+      <div class="small">Protótipo 0.1</div>
+    </div>
+
+    <div class="panel">
+      <h2>Cartas Ativas</h2>
+      <div class="cards">
+        <div class="card">
+          <strong>Sorte</strong>
+          <p>+1 em toda rolagem</p>
+        </div>
+
+        <div class="card">
+          <strong>Crítico</strong>
+          <p>Se cair no máximo, dobra</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let gold = 0;
+
+    const dice = [
+      { sides: 6 }
+    ];
+
+    const cards = {
+      luck: true,
+      crit: true
+    };
+
+    function rollDice(sides) {
+      return Math.floor(Math.random() * sides) + 1;
+    }
+
+    function rollAll() {
+      let finalTotal = 0;
+      const rolls = [];
+
+      dice.forEach((d) => {
+        const roll = rollDice(d.sides);
+        rolls.push(roll);
+
+        let value = roll;
+
+        if (cards.luck) {
+          value += 1;
+        }
+
+        if (cards.crit && roll === d.sides) {
+          value *= 2;
+        }
+
+        finalTotal += value;
+      });
+
+      gold += finalTotal;
+
+      document.getElementById("gold").textContent = gold;
+      document.getElementById("lastRoll").textContent = rolls.join(", ");
+      document.getElementById("result").textContent = finalTotal;
+    }
+
+    document.getElementById("rollButton").addEventListener("click", rollAll);
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js")
+          .then(() => console.log("Service Worker registrado"))
+          .catch((error) => console.log("Erro ao registrar SW:", error));
+      });
+    }
+  </script>
+</body>
+</html>
