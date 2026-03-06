@@ -1,403 +1,275 @@
-const goldEl = document.getElementById("gold")
-const diceEl = document.getElementById("dice")
-const rollBtn = document.getElementById("rollBtn")
+const STORAGE_KEY = "diceCardsIdle_v03";
 
-const lastRollEl = document.getElementById("lastRoll")
-const finalResultEl = document.getElementById("finalResult")
+const CARD_NAMES = {
+  luck: "Sorte",
+  crit: "Crítico",
+  even: "Par"
+};
 
-const shopBtn = document.getElementById("shopBtn")
-const shopModal = document.getElementById("shopModal")
-const closeShop = document.getElementById("closeShop")
+const SLOT_COSTS = {
+  2: 150,
+  3: 400
+};
 
-const tabs = document.querySelectorAll(".tab")
-const tabContents = document.querySelectorAll(".tab-content")
+const DEFAULT_GAME = {
+  gold: 0,
+  dice: 6,
+  ownedDice: [6],
+  ownedCards: [],
+  equippedCards: [null, null, null],
+  unlockedSlots: 1,
+  autoroll: false,
+  offline: false,
+  lastSave: Date.now(),
+  displayFace: 1,
+  finalResult: 0
+};
 
-const slot1 = document.getElementById("slot1")
-const slot2 = document.getElementById("slot2")
-const slot3 = document.getElementById("slot3")
+const goldEl = document.getElementById("gold");
+const diceEl = document.getElementById("dice");
+const gainTextEl = document.getElementById("gainText");
+const rollBtn = document.getElementById("rollBtn");
+const shopBtn = document.getElementById("shopBtn");
 
-let game = {
-gold:0,
+const slot1 = document.getElementById("slot1");
+const slot2 = document.getElementById("slot2");
+const slot3 = document.getElementById("slot3");
 
-dice:6,
+let game = loadGame();
+let isRolling = false;
+let autoRollInterval = null;
+let diceAnimationInterval = null;
 
-ownedDice:[6],
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_GAME };
 
-ownedCards:[],
+    const parsed = JSON.parse(raw);
 
-equippedCards:[null,null,null],
-
-unlockedSlots:1,
-
-autoroll:false,
-
-offline:false,
-
-lastSave:Date.now()
+    return {
+      ...DEFAULT_GAME,
+      ...parsed,
+      ownedDice: Array.isArray(parsed.ownedDice) && parsed.ownedDice.length ? parsed.ownedDice : [6],
+      ownedCards: Array.isArray(parsed.ownedCards) ? parsed.ownedCards : [],
+      equippedCards: Array.isArray(parsed.equippedCards) && parsed.equippedCards.length === 3
+        ? parsed.equippedCards
+        : [null, null, null]
+    };
+  } catch {
+    return { ...DEFAULT_GAME };
+  }
 }
 
-let autoRollInterval = null
-
-
-
-// =====================
-// SAVE
-// =====================
-
-function saveGame(){
-
-game.lastSave = Date.now()
-
-localStorage.setItem("diceIdleSave",JSON.stringify(game))
-
+function saveGame() {
+  game.lastSave = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
 }
 
-function loadGame(){
+function applyOfflineProgress() {
+  if (!game.offline) return;
 
-const save = localStorage.getItem("diceIdleSave")
+  const now = Date.now();
+  const elapsedMs = now - (game.lastSave || now);
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  const cappedSeconds = Math.min(elapsedSeconds, 8 * 60 * 60);
+  const gain = Math.floor(cappedSeconds * 0.5);
 
-if(!save) return
-
-game = JSON.parse(save)
-
+  if (gain > 0) {
+    game.gold += gain;
+    game.finalResult = gain;
+  }
 }
 
-
-
-function applyOfflineProgress(){
-
-if(!game.offline) return
-
-const now = Date.now()
-
-const diff = now - game.lastSave
-
-const seconds = Math.floor(diff / 1000)
-
-const capped = Math.min(seconds, 8 * 3600)
-
-const gain = Math.floor(capped * 0.5)
-
-game.gold += gain
-
+function randomRoll(sides) {
+  return Math.floor(Math.random() * sides) + 1;
 }
 
-
-
-// =====================
-// DICE
-// =====================
-
-function rollDice(){
-
-let roll = Math.floor(Math.random()*game.dice)+1
-
-lastRollEl.textContent = roll
-
-let result = roll
-
-
-
-if(game.equippedCards.includes("luck")){
-result += 1
+function getCardName(cardId) {
+  return CARD_NAMES[cardId] || "Slot";
 }
 
+function calculateFinalResult(roll) {
+  let result = roll;
 
+  if (game.equippedCards.includes("luck")) {
+    result += 1;
+  }
 
-if(game.equippedCards.includes("crit") && roll === game.dice){
-result *= 2
+  if (game.equippedCards.includes("crit") && roll === game.dice) {
+    result *= 2;
+  }
+
+  if (game.equippedCards.includes("even") && roll % 2 === 0) {
+    result *= 2;
+  }
+
+  return result;
 }
 
+function updateSlotsUI() {
+  slot1.classList.remove("locked");
+  slot1.innerHTML = game.equippedCards[0] ? getCardName(game.equippedCards[0]) : "Slot 1";
 
+  if (game.unlockedSlots >= 2) {
+    slot2.classList.remove("locked");
+    slot2.innerHTML = game.equippedCards[1] ? getCardName(game.equippedCards[1]) : "Slot 2";
+  } else {
+    slot2.classList.add("locked");
+    slot2.innerHTML = `Slot 2<br><span>${SLOT_COSTS[2]} ouro</span>`;
+  }
 
-if(game.equippedCards.includes("even") && roll % 2 === 0){
-result *= 2
+  if (game.unlockedSlots >= 3) {
+    slot3.classList.remove("locked");
+    slot3.innerHTML = game.equippedCards[2] ? getCardName(game.equippedCards[2]) : "Slot 3";
+  } else {
+    slot3.classList.add("locked");
+    slot3.innerHTML = `Slot 3<br><span>${SLOT_COSTS[3]} ouro</span>`;
+  }
 }
 
-
-
-finalResultEl.textContent = result
-
-game.gold += result
-
-updateUI()
-
-saveGame()
-
+function updateUI() {
+  goldEl.textContent = game.gold;
+  diceEl.textContent = game.displayFace;
+  gainTextEl.textContent = `+${game.finalResult} ouro`;
+  updateSlotsUI();
 }
 
+function animateDice(finalFace, sides, onComplete) {
+  if (diceAnimationInterval) {
+    clearInterval(diceAnimationInterval);
+    diceAnimationInterval = null;
+  }
 
+  let steps = 0;
+  const totalSteps = 9;
 
-rollBtn.onclick = rollDice
+  diceAnimationInterval = setInterval(() => {
+    diceEl.textContent = randomRoll(sides);
+    steps++;
 
-
-
-// =====================
-// AUTOROLL
-// =====================
-
-function startAutoRoll(){
-
-if(!game.autoroll) return
-
-autoRollInterval = setInterval(()=>{
-
-rollDice()
-
-},2000)
-
+    if (steps >= totalSteps) {
+      clearInterval(diceAnimationInterval);
+      diceAnimationInterval = null;
+      diceEl.textContent = finalFace;
+      onComplete();
+    }
+  }, 70);
 }
 
+function rollDice() {
+  if (isRolling) return;
 
+  isRolling = true;
+  rollBtn.disabled = true;
 
-// =====================
-// SHOP
-// =====================
+  const roll = randomRoll(game.dice);
 
-shopBtn.onclick = ()=>{
+  animateDice(roll, game.dice, () => {
+    const finalResult = calculateFinalResult(roll);
 
-shopModal.classList.remove("hidden")
+    game.displayFace = roll;
+    game.finalResult = finalResult;
+    game.gold += finalResult;
 
+    updateUI();
+    saveGame();
+
+    isRolling = false;
+    rollBtn.disabled = false;
+  });
 }
 
-closeShop.onclick = ()=>{
-
-shopModal.classList.add("hidden")
-
+function stopAutoRoll() {
+  if (autoRollInterval) {
+    clearInterval(autoRollInterval);
+    autoRollInterval = null;
+  }
 }
 
+function startAutoRoll() {
+  stopAutoRoll();
 
+  if (!game.autoroll) return;
 
-tabs.forEach(tab=>{
-
-tab.onclick=()=>{
-
-tabs.forEach(t=>t.classList.remove("active"))
-
-tab.classList.add("active")
-
-const target = tab.dataset.tab
-
-tabContents.forEach(c=>{
-
-c.classList.remove("active")
-
-})
-
-document.getElementById(target).classList.add("active")
-
+  autoRollInterval = setInterval(() => {
+    if (!isRolling) {
+      rollDice();
+    }
+  }, 2000);
 }
 
-})
+function unlockSlot(slotNumber) {
+  if (slotNumber === 2 && game.unlockedSlots < 2 && game.gold >= SLOT_COSTS[2]) {
+    game.gold -= SLOT_COSTS[2];
+    game.unlockedSlots = 2;
+    return true;
+  }
 
+  if (slotNumber === 3 && game.unlockedSlots < 3 && game.gold >= SLOT_COSTS[3]) {
+    game.gold -= SLOT_COSTS[3];
+    game.unlockedSlots = 3;
+    return true;
+  }
 
-
-// =====================
-// BUY SYSTEM
-// =====================
-
-document.querySelectorAll("[data-buy]").forEach(btn=>{
-
-btn.onclick=()=>{
-
-const item = btn.dataset.buy
-
-
-
-// ===== DICE =====
-
-if(item==="dice8" && game.gold>=250){
-
-game.gold -=250
-
-game.dice = 8
-
-game.ownedDice.push(8)
-
+  return false;
 }
 
+function cycleCardInSlot(slotIndex) {
+  const availableCards = game.ownedCards.slice();
 
+  if (!availableCards.length) return false;
 
-if(item==="dice10" && game.gold>=800){
+  const currentCard = game.equippedCards[slotIndex];
+  const cycleOptions = [null, ...availableCards];
+  const currentIndex = cycleOptions.indexOf(currentCard);
+  const nextIndex = (currentIndex + 1) % cycleOptions.length;
+  const nextCard = cycleOptions[nextIndex];
 
-game.gold -=800
+  if (nextCard && game.equippedCards.includes(nextCard)) {
+    const otherIndex = game.equippedCards.indexOf(nextCard);
+    game.equippedCards[otherIndex] = currentCard;
+  }
 
-game.dice = 10
-
-game.ownedDice.push(10)
-
+  game.equippedCards[slotIndex] = nextCard;
+  return true;
 }
 
+function handleSlotClick(slotNumber) {
+  const slotIndex = slotNumber - 1;
 
+  if (game.unlockedSlots < slotNumber) {
+    const unlocked = unlockSlot(slotNumber);
+    if (unlocked) {
+      updateUI();
+      saveGame();
+    }
+    return;
+  }
 
-// ===== CARDS =====
-
-if(item==="luck" && game.gold>=80){
-
-game.gold -=80
-
-game.ownedCards.push("luck")
-
+  const changed = cycleCardInSlot(slotIndex);
+  if (changed) {
+    updateUI();
+    saveGame();
+  }
 }
 
+rollBtn.addEventListener("click", rollDice);
 
+shopBtn.addEventListener("click", () => {
+  window.location.href = "shop.html";
+});
 
-if(item==="crit" && game.gold>=120){
+slot1.addEventListener("click", () => handleSlotClick(1));
+slot2.addEventListener("click", () => handleSlotClick(2));
+slot3.addEventListener("click", () => handleSlotClick(3));
 
-game.gold -=120
+applyOfflineProgress();
 
-game.ownedCards.push("crit")
-
+if (!game.displayFace || game.displayFace > game.dice) {
+  game.displayFace = 1;
 }
 
-
-
-if(item==="even" && game.gold>=200){
-
-game.gold -=200
-
-game.ownedCards.push("even")
-
-}
-
-
-
-// ===== UNLOCKS =====
-
-if(item==="autoroll" && game.gold>=300){
-
-game.gold -=300
-
-game.autoroll=true
-
-startAutoRoll()
-
-}
-
-
-
-if(item==="offline" && game.gold>=600){
-
-game.gold -=600
-
-game.offline=true
-
-}
-
-
-
-updateUI()
-
-saveGame()
-
-}
-
-})
-
-
-
-// =====================
-// SLOTS
-// =====================
-
-slot1.onclick=()=>equipCard(0)
-slot2.onclick=()=>unlockSlot(2)
-slot3.onclick=()=>unlockSlot(3)
-
-
-
-function unlockSlot(slot){
-
-if(slot===2 && game.unlockedSlots<2 && game.gold>=150){
-
-game.gold -=150
-
-game.unlockedSlots=2
-
-}
-
-
-
-if(slot===3 && game.unlockedSlots<3 && game.gold>=400){
-
-game.gold -=400
-
-game.unlockedSlots=3
-
-}
-
-updateUI()
-
-saveGame()
-
-}
-
-
-
-function equipCard(slot){
-
-if(!game.ownedCards.length) return
-
-const card = game.ownedCards[0]
-
-game.equippedCards[slot] = card
-
-updateUI()
-
-saveGame()
-
-}
-
-
-
-// =====================
-// UI
-// =====================
-
-function updateUI(){
-
-goldEl.textContent = game.gold
-
-diceEl.textContent = Math.floor(Math.random()*game.dice)+1
-
-
-
-slot1.textContent = game.equippedCards[0] || "Slot 1"
-
-
-
-if(game.unlockedSlots>=2){
-
-slot2.classList.remove("locked")
-
-slot2.textContent = game.equippedCards[1] || "Slot 2"
-
-}
-
-
-
-if(game.unlockedSlots>=3){
-
-slot3.classList.remove("locked")
-
-slot3.textContent = game.equippedCards[2] || "Slot 3"
-
-}
-
-}
-
-
-
-// =====================
-// INIT
-// =====================
-
-loadGame()
-
-applyOfflineProgress()
-
-updateUI()
-
-startAutoRoll()
-
-setInterval(saveGame,5000)
+updateUI();
+startAutoRoll();
+setInterval(saveGame, 5000);

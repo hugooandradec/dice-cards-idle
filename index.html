@@ -1,238 +1,64 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dice & Cards Idle</title>
 
-<title>Dice & Cards Idle</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
-
-<meta name="theme-color" content="#6a1b9a">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#6a1b9a" />
 </head>
-
 <body>
-
-<div class="container">
-
-<h1>Dice & Cards Idle</h1>
-
-<div class="card">
-
-<div class="ouro-area">
-<p>Ouro</p>
-<h2 id="gold">0</h2>
-</div>
-
-<div id="dice" class="dice">
-1
-</div>
-
-<p>Última rolagem: <span id="lastRoll">0</span></p>
-<p>Resultado final: <span id="finalResult">0</span></p>
-
-<button id="rollBtn" class="main-btn">
-Rolar
-</button>
-
-<button id="shopBtn" class="secondary-btn">
-Loja
-</button>
-
-<p class="version">Protótipo 0.3</p>
-
-</div>
-
-
-<div class="card">
-
-<h2>Cartas Ativas</h2>
-
-<div class="card-slots">
-
-<div class="slot" id="slot1">
-Slot 1
-</div>
-
-<div class="slot locked" id="slot2">
-Slot 2
-<br>
-<span>150 ouro</span>
-</div>
-
-<div class="slot locked" id="slot3">
-Slot 3
-<br>
-<span>400 ouro</span>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- LOJA -->
-
-<div id="shopModal" class="modal hidden">
-
-<div class="modal-content">
-
-<div class="shop-header">
-
-<h2>Loja</h2>
-
-<button id="closeShop">
-X
-</button>
-
-</div>
-
-<div class="shop-tabs">
-
-<button class="tab active" data-tab="diceTab">
-Dados
-</button>
-
-<button class="tab" data-tab="cardsTab">
-Cartas
-</button>
-
-<button class="tab" data-tab="unlockTab">
-Desbloqueios
-</button>
-
-</div>
-
-<div class="shop-body">
-
-<!-- DADOS -->
-
-<div id="diceTab" class="tab-content active">
-
-<div class="shop-item">
-
-<h3>d6</h3>
-<p>1 - 6</p>
-
-<button data-buy="dice6">
-Equipado
-</button>
-
-</div>
-
-<div class="shop-item">
-
-<h3>d8</h3>
-<p>1 - 8</p>
-
-<button data-buy="dice8">
-250 ouro
-</button>
-
-</div>
-
-<div class="shop-item">
-
-<h3>d10</h3>
-<p>1 - 10</p>
-
-<button data-buy="dice10">
-800 ouro
-</button>
-
-</div>
-
-</div>
-
-
-<!-- CARTAS -->
-
-<div id="cardsTab" class="tab-content">
-
-<div class="shop-item">
-
-<h3>Sorte</h3>
-<p>+1 em toda rolagem</p>
-
-<button data-buy="luck">
-80 ouro
-</button>
-
-</div>
-
-<div class="shop-item">
-
-<h3>Crítico</h3>
-<p>Se cair no máximo, dobra</p>
-
-<button data-buy="crit">
-120 ouro
-</button>
-
-</div>
-
-<div class="shop-item">
-
-<h3>Par</h3>
-<p>Se cair número par, x2</p>
-
-<button data-buy="even">
-200 ouro
-</button>
-
-</div>
-
-</div>
-
-
-<!-- DESBLOQUEIOS -->
-
-<div id="unlockTab" class="tab-content">
-
-<div class="shop-item">
-
-<h3>Auto Roll</h3>
-<p>Rola automaticamente</p>
-
-<button data-buy="autoroll">
-300 ouro
-</button>
-
-</div>
-
-<div class="shop-item">
-
-<h3>Ganho Offline</h3>
-<p>Receba ouro enquanto estiver fora</p>
-
-<button data-buy="offline">
-600 ouro
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-
-<script src="app.js"></script>
-
-<script>
-
-if ("serviceWorker" in navigator) {
-navigator.serviceWorker.register("sw.js");
-}
-
-</script>
-
+  <div class="container">
+    <h1>Dice & Cards Idle</h1>
+
+    <div class="card main-card">
+      <div class="ouro-area">
+        <p>Ouro</p>
+        <h2 id="gold">0</h2>
+      </div>
+
+      <div id="dice" class="dice">1</div>
+
+      <p class="gain-line">
+        <span id="gainText">+0 ouro</span>
+      </p>
+
+      <div class="main-actions">
+        <button id="rollBtn" class="main-btn">Rolar</button>
+        <button id="shopBtn" class="secondary-btn">Loja</button>
+      </div>
+
+      <p class="version">Protótipo 0.3</p>
+    </div>
+
+    <div class="card">
+      <h2>Cartas Ativas</h2>
+
+      <div class="card-slots">
+        <div class="slot" id="slot1">Slot 1</div>
+
+        <div class="slot locked" id="slot2">
+          Slot 2
+          <br />
+          <span>150 ouro</span>
+        </div>
+
+        <div class="slot locked" id="slot3">
+          Slot 3
+          <br />
+          <span>400 ouro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
 </body>
 </html>

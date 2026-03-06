@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loja - Dice & Cards Idle</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#6a1b9a" />
+</head>
+<body>
+  <div class="container">
+    <div class="shop-page-header">
+      <button id="backBtn" class="secondary-btn">Voltar</button>
+
+      <div class="shop-page-title">
+        <h1>Loja</h1>
+        <p class="shop-gold-line">Ouro: <span id="gold">0</span></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="shop-tabs">
+        <button class="tab active" data-tab="diceTab">Dados</button>
+        <button class="tab" data-tab="cardsTab">Cartas</button>
+        <button class="tab" data-tab="unlockTab">Desbloqueios</button>
+      </div>
+
+      <div class="shop-body">
+        <div id="diceTab" class="tab-content active">
+          <div class="shop-item">
+            <h3>d6</h3>
+            <p>1 - 6</p>
+            <button data-buy="dice6">Equipado</button>
+          </div>
+
+          <div class="shop-item">
+            <h3>d8</h3>
+            <p>1 - 8</p>
+            <button data-buy="dice8">250 ouro</button>
+          </div>
+
+          <div class="shop-item">
+            <h3>d10</h3>
+            <p>1 - 10</p>
+            <button data-buy="dice10">800 ouro</button>
+          </div>
+        </div>
+
+        <div id="cardsTab" class="tab-content">
+          <div class="shop-item">
+            <h3>Sorte</h3>
+            <p>+1 em toda rolagem</p>
+            <button data-buy="luck">80 ouro</button>
+          </div>
+
+          <div class="shop-item">
+            <h3>Crítico</h3>
+            <p>Se cair no máximo, dobra</p>
+            <button data-buy="crit">120 ouro</button>
+          </div>
+
+          <div class="shop-item">
+            <h3>Par</h3>
+            <p>Se cair número par, x2</p>
+            <button data-buy="even">200 ouro</button>
+          </div>
+        </div>
+
+        <div id="unlockTab" class="tab-content">
+          <div class="shop-item">
+            <h3>Auto Roll</h3>
+            <p>Rola automaticamente</p>
+            <button data-buy="autoroll">300 ouro</button>
+          </div>
+
+          <div class="shop-item">
+            <h3>Ganho Offline</h3>
+            <p>Receba ouro enquanto estiver fora</p>
+            <button data-buy="offline">600 ouro</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="shop.js"></script>
+</body>
+</html>
