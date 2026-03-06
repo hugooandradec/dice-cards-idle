@@ -40,36 +40,6 @@
       margin-bottom: 16px;
     }
 
-    button {
-      background: #6a1b9a;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 12px;
-    }
-
-    button:hover {
-      opacity: 0.95;
-    }
-
-    .cards {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .card {
-      width: 160px;
-      background: #1b1b1b;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 12px;
-    }
-
     .label {
       color: #bbb;
       font-size: 14px;
@@ -86,6 +56,63 @@
       color: #ccc;
       font-size: 14px;
     }
+
+    button {
+      background: #6a1b9a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    button:hover {
+      opacity: 0.95;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .dice-area {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0 12px;
+    }
+
+    .die {
+      width: 84px;
+      height: 84px;
+      border: 2px solid #444;
+      border-radius: 16px;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+      user-select: none;
+    }
+
+    .cards {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      width: 160px;
+      background: #1b1b1b;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+    }
   </style>
 </head>
 <body>
@@ -96,11 +123,15 @@
       <div class="label">Ouro</div>
       <div class="value" id="gold">0</div>
 
+      <div class="dice-area">
+        <div class="die" id="dieDisplay">-</div>
+      </div>
+
       <p>Última rolagem: <span id="lastRoll">-</span></p>
       <p>Resultado final: <span id="result">-</span></p>
 
       <button id="rollButton">Rolar todos</button>
-      <div class="small">Protótipo 0.1</div>
+      <div class="small">Protótipo 0.2</div>
     </div>
 
     <div class="panel">
@@ -119,59 +150,6 @@
     </div>
   </div>
 
-  <script>
-    let gold = 0;
-
-    const dice = [
-      { sides: 6 }
-    ];
-
-    const cards = {
-      luck: true,
-      crit: true
-    };
-
-    function rollDice(sides) {
-      return Math.floor(Math.random() * sides) + 1;
-    }
-
-    function rollAll() {
-      let finalTotal = 0;
-      const rolls = [];
-
-      dice.forEach((d) => {
-        const roll = rollDice(d.sides);
-        rolls.push(roll);
-
-        let value = roll;
-
-        if (cards.luck) {
-          value += 1;
-        }
-
-        if (cards.crit && roll === d.sides) {
-          value *= 2;
-        }
-
-        finalTotal += value;
-      });
-
-      gold += finalTotal;
-
-      document.getElementById("gold").textContent = gold;
-      document.getElementById("lastRoll").textContent = rolls.join(", ");
-      document.getElementById("result").textContent = finalTotal;
-    }
-
-    document.getElementById("rollButton").addEventListener("click", rollAll);
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js")
-          .then(() => console.log("Service Worker registrado"))
-          .catch((error) => console.log("Erro ao registrar SW:", error));
-      });
-    }
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
