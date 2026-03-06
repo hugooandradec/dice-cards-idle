@@ -1,129 +1,403 @@
-const STORAGE_KEY = "diceCardsIdleSave";
+const goldEl = document.getElementById("gold")
+const diceEl = document.getElementById("dice")
+const rollBtn = document.getElementById("rollBtn")
 
-const elements = {
-  gold: document.getElementById("gold"),
-  lastRoll: document.getElementById("lastRoll"),
-  result: document.getElementById("result"),
-  dieDisplay: document.getElementById("dieDisplay"),
-  rollButton: document.getElementById("rollButton"),
-};
+const lastRollEl = document.getElementById("lastRoll")
+const finalResultEl = document.getElementById("finalResult")
 
-const defaultState = {
-  gold: 0,
-  dice: [
-    { sides: 6 }
-  ],
-  cards: {
-    luck: true,
-    crit: true,
-  },
-};
+const shopBtn = document.getElementById("shopBtn")
+const shopModal = document.getElementById("shopModal")
+const closeShop = document.getElementById("closeShop")
 
-let state = loadState();
+const tabs = document.querySelectorAll(".tab")
+const tabContents = document.querySelectorAll(".tab-content")
 
-function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+const slot1 = document.getElementById("slot1")
+const slot2 = document.getElementById("slot2")
+const slot3 = document.getElementById("slot3")
 
-    if (!saved) {
-      return structuredClone(defaultState);
-    }
+let game = {
+gold:0,
 
-    return {
-      gold: Number(saved.gold) || 0,
-      dice: Array.isArray(saved.dice) && saved.dice.length
-        ? saved.dice
-        : structuredClone(defaultState.dice),
-      cards: {
-        ...defaultState.cards,
-        ...(saved.cards || {}),
-      },
-    };
-  } catch {
-    return structuredClone(defaultState);
-  }
+dice:6,
+
+ownedDice:[6],
+
+ownedCards:[],
+
+equippedCards:[null,null,null],
+
+unlockedSlots:1,
+
+autoroll:false,
+
+offline:false,
+
+lastSave:Date.now()
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+let autoRollInterval = null
+
+
+
+// =====================
+// SAVE
+// =====================
+
+function saveGame(){
+
+game.lastSave = Date.now()
+
+localStorage.setItem("diceIdleSave",JSON.stringify(game))
+
 }
 
-function updateUI() {
-  elements.gold.textContent = state.gold;
+function loadGame(){
+
+const save = localStorage.getItem("diceIdleSave")
+
+if(!save) return
+
+game = JSON.parse(save)
+
 }
 
-function rollDice(sides) {
-  return Math.floor(Math.random() * sides) + 1;
+
+
+function applyOfflineProgress(){
+
+if(!game.offline) return
+
+const now = Date.now()
+
+const diff = now - game.lastSave
+
+const seconds = Math.floor(diff / 1000)
+
+const capped = Math.min(seconds, 8 * 3600)
+
+const gain = Math.floor(capped * 0.5)
+
+game.gold += gain
+
 }
 
-function applyCardEffects(roll, die) {
-  let value = roll;
 
-  if (state.cards.luck) {
-    value += 1;
-  }
 
-  if (state.cards.crit && roll === die.sides) {
-    value *= 2;
-  }
+// =====================
+// DICE
+// =====================
 
-  return value;
+function rollDice(){
+
+let roll = Math.floor(Math.random()*game.dice)+1
+
+lastRollEl.textContent = roll
+
+let result = roll
+
+
+
+if(game.equippedCards.includes("luck")){
+result += 1
 }
 
-function animateSingleDie(finalRoll, sides, onComplete) {
-  let steps = 0;
-  const totalSteps = 10;
-  const intervalTime = 80;
 
-  const interval = setInterval(() => {
-    elements.dieDisplay.textContent = rollDice(sides);
-    steps++;
 
-    if (steps >= totalSteps) {
-      clearInterval(interval);
-      elements.dieDisplay.textContent = finalRoll;
-      onComplete();
-    }
-  }, intervalTime);
+if(game.equippedCards.includes("crit") && roll === game.dice){
+result *= 2
 }
 
-function rollAll() {
-  if (!state.dice.length) return;
 
-  elements.rollButton.disabled = true;
 
-  const die = state.dice[0];
-  const roll = rollDice(die.sides);
-
-  animateSingleDie(roll, die.sides, () => {
-    const finalValue = applyCardEffects(roll, die);
-
-    state.gold += finalValue;
-
-    elements.lastRoll.textContent = roll;
-    elements.result.textContent = finalValue;
-    updateUI();
-    saveState();
-
-    elements.rollButton.disabled = false;
-  });
+if(game.equippedCards.includes("even") && roll % 2 === 0){
+result *= 2
 }
 
-function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
 
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .then(() => console.log("Service Worker registrado"))
-      .catch((error) => console.log("Erro ao registrar SW:", error));
-  });
+
+finalResultEl.textContent = result
+
+game.gold += result
+
+updateUI()
+
+saveGame()
+
 }
 
-function init() {
-  updateUI();
-  registerServiceWorker();
 
-  elements.rollButton.addEventListener("click", rollAll);
+
+rollBtn.onclick = rollDice
+
+
+
+// =====================
+// AUTOROLL
+// =====================
+
+function startAutoRoll(){
+
+if(!game.autoroll) return
+
+autoRollInterval = setInterval(()=>{
+
+rollDice()
+
+},2000)
+
 }
 
-init();
+
+
+// =====================
+// SHOP
+// =====================
+
+shopBtn.onclick = ()=>{
+
+shopModal.classList.remove("hidden")
+
+}
+
+closeShop.onclick = ()=>{
+
+shopModal.classList.add("hidden")
+
+}
+
+
+
+tabs.forEach(tab=>{
+
+tab.onclick=()=>{
+
+tabs.forEach(t=>t.classList.remove("active"))
+
+tab.classList.add("active")
+
+const target = tab.dataset.tab
+
+tabContents.forEach(c=>{
+
+c.classList.remove("active")
+
+})
+
+document.getElementById(target).classList.add("active")
+
+}
+
+})
+
+
+
+// =====================
+// BUY SYSTEM
+// =====================
+
+document.querySelectorAll("[data-buy]").forEach(btn=>{
+
+btn.onclick=()=>{
+
+const item = btn.dataset.buy
+
+
+
+// ===== DICE =====
+
+if(item==="dice8" && game.gold>=250){
+
+game.gold -=250
+
+game.dice = 8
+
+game.ownedDice.push(8)
+
+}
+
+
+
+if(item==="dice10" && game.gold>=800){
+
+game.gold -=800
+
+game.dice = 10
+
+game.ownedDice.push(10)
+
+}
+
+
+
+// ===== CARDS =====
+
+if(item==="luck" && game.gold>=80){
+
+game.gold -=80
+
+game.ownedCards.push("luck")
+
+}
+
+
+
+if(item==="crit" && game.gold>=120){
+
+game.gold -=120
+
+game.ownedCards.push("crit")
+
+}
+
+
+
+if(item==="even" && game.gold>=200){
+
+game.gold -=200
+
+game.ownedCards.push("even")
+
+}
+
+
+
+// ===== UNLOCKS =====
+
+if(item==="autoroll" && game.gold>=300){
+
+game.gold -=300
+
+game.autoroll=true
+
+startAutoRoll()
+
+}
+
+
+
+if(item==="offline" && game.gold>=600){
+
+game.gold -=600
+
+game.offline=true
+
+}
+
+
+
+updateUI()
+
+saveGame()
+
+}
+
+})
+
+
+
+// =====================
+// SLOTS
+// =====================
+
+slot1.onclick=()=>equipCard(0)
+slot2.onclick=()=>unlockSlot(2)
+slot3.onclick=()=>unlockSlot(3)
+
+
+
+function unlockSlot(slot){
+
+if(slot===2 && game.unlockedSlots<2 && game.gold>=150){
+
+game.gold -=150
+
+game.unlockedSlots=2
+
+}
+
+
+
+if(slot===3 && game.unlockedSlots<3 && game.gold>=400){
+
+game.gold -=400
+
+game.unlockedSlots=3
+
+}
+
+updateUI()
+
+saveGame()
+
+}
+
+
+
+function equipCard(slot){
+
+if(!game.ownedCards.length) return
+
+const card = game.ownedCards[0]
+
+game.equippedCards[slot] = card
+
+updateUI()
+
+saveGame()
+
+}
+
+
+
+// =====================
+// UI
+// =====================
+
+function updateUI(){
+
+goldEl.textContent = game.gold
+
+diceEl.textContent = Math.floor(Math.random()*game.dice)+1
+
+
+
+slot1.textContent = game.equippedCards[0] || "Slot 1"
+
+
+
+if(game.unlockedSlots>=2){
+
+slot2.classList.remove("locked")
+
+slot2.textContent = game.equippedCards[1] || "Slot 2"
+
+}
+
+
+
+if(game.unlockedSlots>=3){
+
+slot3.classList.remove("locked")
+
+slot3.textContent = game.equippedCards[2] || "Slot 3"
+
+}
+
+}
+
+
+
+// =====================
+// INIT
+// =====================
+
+loadGame()
+
+applyOfflineProgress()
+
+updateUI()
+
+startAutoRoll()
+
+setInterval(saveGame,5000)

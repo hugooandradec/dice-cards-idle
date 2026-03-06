@@ -1,6 +1,6 @@
 {
   "name": "Dice & Cards Idle",
-  "short_name": "DiceCards",
+  "short_name": "Dice&Cards",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#111111",
