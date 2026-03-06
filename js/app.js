@@ -5,9 +5,8 @@ const SAVE_KEY = "dice_cards_idle_save";
 let state = loadGame();
 
 const goldValue = document.getElementById("goldValue");
-const mainRollResult = document.getElementById("mainRollResult");
 const rollGain = document.getElementById("rollGain");
-const rollBreakdown = document.getElementById("rollBreakdown");
+const rollSlotsPreview = document.getElementById("rollSlotsPreview");
 const rollButton = document.getElementById("rollButton");
 
 const diceSlotsEl = document.getElementById("diceSlots");
@@ -44,6 +43,17 @@ function getRarityClass(rarity) {
   return `rarity-${rarity || "common"}`;
 }
 
+function formatRarity(rarity) {
+  const map = {
+    common: "Comum",
+    uncommon: "Incomum",
+    rare: "Rara",
+    epic: "Épica",
+    legendary: "Lendária"
+  };
+  return map[rarity] || "Comum";
+}
+
 function getOwnedDieByUid(uid) {
   return state.inventory.dice.find((item) => item.uid === uid) || null;
 }
@@ -62,9 +72,41 @@ function getEquippedCardEffects() {
 
 function renderTop() {
   goldValue.textContent = Math.floor(state.gold);
-  mainRollResult.textContent = state.lastRollTotal ?? "-";
   rollGain.textContent = `+${Math.floor(state.lastRollGain || 0)} ouro`;
-  rollBreakdown.textContent = state.lastRollBreakdown || "";
+  renderRollSlotsPreview();
+}
+
+function renderRollSlotsPreview() {
+  const slotValues = Array.isArray(state.lastRollSlots)
+    ? state.lastRollSlots
+    : [null, null, null, null, null];
+
+  const total = slotValues.reduce((sum, value) => sum + (Number(value) || 0), 0);
+
+  rollSlotsPreview.innerHTML = "";
+
+  slotValues.forEach((value, index) => {
+    const box = document.createElement("div");
+    box.className = `roll-slot-box ${value == null ? "empty" : ""}`;
+    box.innerHTML = `
+      <div class="roll-slot-label">S${index + 1}</div>
+      <div class="roll-slot-value">${value == null ? "-" : value}</div>
+    `;
+    rollSlotsPreview.appendChild(box);
+  });
+
+  const equals = document.createElement("div");
+  equals.className = "roll-equals";
+  equals.textContent = "=";
+  rollSlotsPreview.appendChild(equals);
+
+  const totalBox = document.createElement("div");
+  totalBox.className = "roll-total-box";
+  totalBox.innerHTML = `
+    <div class="roll-slot-label">TOTAL</div>
+    <div class="roll-total-value">${total}</div>
+  `;
+  rollSlotsPreview.appendChild(totalBox);
 }
 
 function renderDiceSlots() {
@@ -84,7 +126,7 @@ function renderDiceSlots() {
           <span class="rarity-badge ${getRarityClass(dieData?.rarity)}">${formatRarity(dieData?.rarity)}</span>
         </div>
 
-        <div class="dice-face">${dieData?.sides || "?"}</div>
+        <div class="dice-face">${dieData ? `d${dieData.sides}` : "?"}</div>
 
         <div class="slot-name">${dieData?.name || "Dado"}</div>
         <div class="slot-desc">${dieData?.description || ""}</div>
@@ -139,7 +181,7 @@ function renderCardSlots() {
         <button class="slot-mini-btn unequip" data-card-slot="${index}" data-action="unequip-card">
           Desequipar
         </button>
-      `; 
+      `;
     } else {
       slot.innerHTML = `
         <div class="card-slot-header">
@@ -173,28 +215,11 @@ function renderAll() {
   rollButton.style.cursor = hasAnyDie ? "pointer" : "not-allowed";
 }
 
-function formatRarity(rarity) {
-  const map = {
-    common: "Comum",
-    uncommon: "Incomum",
-    rare: "Rara",
-    epic: "Épica",
-    legendary: "Lendária"
-  };
-  return map[rarity] || "Comum";
-}
-
 function rollDie(sides) {
   return Math.floor(Math.random() * sides) + 1;
 }
 
 function processRoll() {
-  const equippedDiceItems = state.equippedDice
-    .map((uid) => getOwnedDieByUid(uid))
-    .filter(Boolean);
-
-  if (!equippedDiceItems.length) return;
-
   const effects = getEquippedCardEffects();
 
   let flatPerDie = 0;
@@ -209,49 +234,76 @@ function processRoll() {
     if (effect.type === "rerollOnOne") rerollOnOneCount += effect.value;
   });
 
-  const breakdownParts = [];
-  let total = 0;
   let rerollsLeft = rerollOnOneCount;
+  const slotResults = [];
 
-  equippedDiceItems.forEach((dieItem, idx) => {
-    const dieData = DICE_DATA[dieItem.baseId];
-    if (!dieData) return;
+  state.equippedDice.forEach((uid) => {
+    if (!uid) {
+      slotResults.push(null);
+      return;
+    }
+
+    const dieItem = getOwnedDieByUid(uid);
+    const dieData = dieItem ? DICE_DATA[dieItem.baseId] : null;
+
+    if (!dieData) {
+      slotResults.push(null);
+      return;
+    }
 
     let result = rollDie(dieData.sides);
-    const original = result;
 
     if (result === 1 && rerollsLeft > 0) {
       result = rollDie(dieData.sides);
       rerollsLeft -= 1;
-      breakdownParts.push(`${dieData.name} ${idx + 1}: ${original}↺${result}`);
-    } else {
-      breakdownParts.push(`${dieData.name} ${idx + 1}: ${result}`);
     }
 
-    total += result + flatPerDie;
+    result += flatPerDie;
+    slotResults.push(result);
   });
 
-  let critTriggered = false;
+  let total = slotResults.reduce((sum, value) => sum + (Number(value) || 0), 0);
+
   if (Math.random() < critChance) {
     total *= 2;
-    critTriggered = true;
+
+    for (let i = 0; i < slotResults.length; i += 1) {
+      if (slotResults[i] != null) {
+        slotResults[i] *= 2;
+      }
+    }
   }
 
   total = Math.floor(total * goldMultiplier);
 
+  if (goldMultiplier > 1) {
+    const baseWithoutMultiplier = slotResults.reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const multiplierFactor = total / (baseWithoutMultiplier || 1);
+
+    for (let i = 0; i < slotResults.length; i += 1) {
+      if (slotResults[i] != null) {
+        slotResults[i] = Math.floor(slotResults[i] * multiplierFactor);
+      }
+    }
+
+    const adjustedTotal = slotResults.reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const diff = total - adjustedTotal;
+
+    if (diff !== 0) {
+      const lastFilledIndex = [...slotResults]
+        .map((value, index) => ({ value, index }))
+        .filter((item) => item.value != null)
+        .pop()?.index;
+
+      if (lastFilledIndex != null) {
+        slotResults[lastFilledIndex] += diff;
+      }
+    }
+  }
+
   state.gold += total;
-  state.lastRollTotal = total;
   state.lastRollGain = total;
-
-  const extraParts = [];
-  if (flatPerDie > 0) extraParts.push(`+${flatPerDie} por dado`);
-  if (goldMultiplier > 1) extraParts.push(`x${goldMultiplier.toFixed(2)} ouro`);
-  if (critTriggered) extraParts.push("CRÍTICO!");
-
-  state.lastRollBreakdown = [
-    breakdownParts.join(" | "),
-    extraParts.join(" | ")
-  ].filter(Boolean).join(" • ");
+  state.lastRollSlots = slotResults;
 
   saveGame();
   renderAll();
@@ -327,7 +379,10 @@ function openDiceModal(slotIndex) {
         <span class="rarity-badge ${getRarityClass(dieData?.rarity)}">${formatRarity(dieData?.rarity)}</span>
       </div>
 
-      <div class="modal-card-desc">${dieData?.description || ""}<br><strong>d${dieData?.sides || 6}</strong></div>
+      <div class="modal-card-desc">
+        ${dieData?.description || ""}<br>
+        <strong>d${dieData?.sides || 6}</strong>
+      </div>
       <button data-equip-dice-uid="${dieItem.uid}">Equipar</button>
     `;
 

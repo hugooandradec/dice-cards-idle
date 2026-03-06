@@ -8,8 +8,6 @@
   --purple: #7c2cff;
   --purple-hover: #8d46ff;
   --button-dark: #44444c;
-  --green: #39d98a;
-  --red: #ff5d73;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -36,23 +34,23 @@ a {
 }
 
 .container {
-  width: min(100%, 920px);
+  width: min(100%, 1300px);
   margin: 0 auto;
-  padding: 22px 16px 40px;
+  padding: 18px 16px 40px;
 }
 
 .title {
   text-align: center;
-  font-size: clamp(2rem, 5vw, 3rem);
-  margin: 0 0 20px;
-  font-weight: 800;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  margin: 0 0 22px;
+  font-weight: 900;
 }
 
 .panel {
   background: linear-gradient(180deg, var(--panel), #111214);
   border: 1px solid var(--border);
   border-radius: 22px;
-  padding: 22px;
+  padding: 20px;
   box-shadow: var(--shadow);
   margin-bottom: 18px;
 }
@@ -61,7 +59,7 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
 }
 
 .gold-box {
@@ -78,42 +76,67 @@ a {
 }
 
 #goldValue {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 3rem;
+  font-weight: 900;
 }
 
-.dice-result-area {
+.roll-summary-area {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.roll-slots-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 92px;
+}
+
+.roll-slot-box,
+.roll-total-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #1f2024, #18191d);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  min-height: 132px;
-}
-
-.dice-result {
-  width: 108px;
-  height: 108px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #1f2024, #18191d);
-  display: grid;
-  place-items: center;
-  font-size: 3.2rem;
-  font-weight: 900;
+  justify-content: center;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
 }
 
-.roll-gain {
-  font-size: 1.9rem;
-  font-weight: 800;
-  color: var(--text);
+.roll-slot-box.empty {
+  opacity: 0.4;
 }
 
-.roll-breakdown {
-  min-height: 24px;
-  font-size: 0.95rem;
+.roll-slot-label {
+  font-size: 0.7rem;
   color: var(--muted);
-  text-align: center;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.roll-slot-value,
+.roll-total-value {
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+
+.roll-equals {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.roll-gain {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text);
 }
 
 .actions {
@@ -160,6 +183,17 @@ a {
   font-size: 1rem;
 }
 
+.build-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.build-panel {
+  height: 100%;
+}
+
 .section-header {
   display: flex;
   flex-direction: column;
@@ -170,7 +204,7 @@ a {
 .section-header h2 {
   margin: 0;
   text-align: center;
-  font-size: 1.7rem;
+  font-size: 1.6rem;
 }
 
 .section-subtitle {
@@ -179,9 +213,10 @@ a {
   font-size: 0.95rem;
 }
 
-.dice-slots {
+.dice-slots,
+.card-slots {
   display: grid;
-  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -190,11 +225,23 @@ a {
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 14px;
-  min-height: 156px;
+  min-height: 210px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   justify-content: space-between;
+}
+
+.card-slot {
+  background: linear-gradient(180deg, var(--panel-2), #16171b);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 12px;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .dice-slot-header,
@@ -206,7 +253,7 @@ a {
 }
 
 .slot-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--muted);
   font-weight: 700;
   text-transform: uppercase;
@@ -214,23 +261,24 @@ a {
 }
 
 .rarity-badge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   padding: 4px 8px;
   border-radius: 999px;
   background: #2a2b31;
   color: #fff;
   border: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
 }
 
 .dice-face {
-  width: 54px;
-  height: 54px;
+  width: 62px;
+  height: 62px;
   margin: 0 auto;
   border-radius: 12px;
   border: 1px solid var(--border);
   display: grid;
   place-items: center;
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 900;
   background: #202127;
 }
@@ -273,24 +321,6 @@ a {
   background: #5b5d66;
 }
 
-.card-slots {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(135px, 1fr));
-  gap: 14px;
-}
-
-.card-slot {
-  background: linear-gradient(180deg, var(--panel-2), #16171b);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 12px;
-  min-height: 265px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
-}
-
 .card-art {
   width: 100%;
   aspect-ratio: 5 / 7;
@@ -304,14 +334,6 @@ a {
   text-align: center;
   font-size: 1.1rem;
   font-weight: 900;
-}
-
-.card-slot .slot-name {
-  font-size: 1rem;
-}
-
-.card-slot .slot-desc {
-  min-height: 58px;
 }
 
 .modal.hidden {
@@ -434,16 +456,40 @@ a {
   background: #c97a00;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1200px) {
+  .build-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dice-slots,
+  .card-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
   .dice-slots,
   .card-slots {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .roll-slot-box,
+  .roll-total-box {
+    width: 64px;
+    height: 64px;
+  }
+
+  .roll-slot-value,
+  .roll-total-value {
+    font-size: 1.45rem;
+  }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 480px) {
   .container {
-    padding: 16px 12px 32px;
+    padding: 14px 10px 30px;
   }
 
   .panel {
@@ -454,20 +500,6 @@ a {
   .dice-slots,
   .card-slots {
     grid-template-columns: 1fr;
-  }
-
-  .dice-result {
-    width: 94px;
-    height: 94px;
-    font-size: 2.7rem;
-  }
-
-  .roll-gain {
-    font-size: 1.5rem;
-  }
-
-  .actions {
-    width: 100%;
   }
 
   .btn {

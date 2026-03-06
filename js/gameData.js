@@ -22,6 +22,22 @@ export const DICE_DATA = {
     rarity: "rare",
     description: "Tem mais lados, aumentando o teto da rolagem.",
     icon: "d8"
+  },
+  d10_sharp: {
+    id: "d10_sharp",
+    name: "Dado Afiado",
+    sides: 10,
+    rarity: "epic",
+    description: "Um dado mais raro, com rolagens mais altas.",
+    icon: "d10"
+  },
+  d20_ancient: {
+    id: "d20_ancient",
+    name: "Dado Ancestral",
+    sides: 20,
+    rarity: "legendary",
+    description: "Um monstro de build. Alto teto de ouro.",
+    icon: "d20"
   }
 };
 
@@ -72,14 +88,15 @@ export function createInitialGameState() {
   return {
     version: "0.3",
     gold: 113,
-    lastRollTotal: 4,
     lastRollGain: 4,
-    lastRollBreakdown: "Dado Básico: 4",
+    lastRollSlots: [4, null, null, null, null],
     inventory: {
       dice: [
         { uid: "die_1", baseId: "d6_basic" },
         { uid: "die_2", baseId: "d6_lucky" },
-        { uid: "die_3", baseId: "d8_heavy" }
+        { uid: "die_3", baseId: "d8_heavy" },
+        { uid: "die_4", baseId: "d10_sharp" },
+        { uid: "die_5", baseId: "d20_ancient" }
       ],
       cards: [
         { uid: "card_1", baseId: "card_crit" },
@@ -88,7 +105,7 @@ export function createInitialGameState() {
         { uid: "card_4", baseId: "card_focus" }
       ]
     },
-    equippedDice: ["die_1", null, null, null, null],
-    equippedCards: ["card_1", null, null, null, null]
+    equippedDice: ["die_1", "die_3", "die_2", null, null],
+    equippedCards: ["card_4", "card_3", "card_1", "card_2", null]
   };
 }
