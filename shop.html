@@ -4,86 +4,245 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Loja - Dice & Cards Idle</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
 
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#6a1b9a" />
+    .shop-back {
+      text-decoration: none;
+      color: #fff;
+      background: #44444c;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shop-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .shop-title {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+    }
+
+    .shop-gold {
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+
+    .shop-gold strong {
+      color: #fff;
+      font-size: 1.5rem;
+    }
+
+    .shop-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .shop-tab {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      background: #2a2b31;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .shop-tab.active {
+      background: var(--purple);
+    }
+
+    .shop-tab-panel {
+      display: none;
+    }
+
+    .shop-tab-panel.active {
+      display: block;
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .shop-card {
+      background: linear-gradient(180deg, var(--panel-2), #16171b);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 260px;
+    }
+
+    .shop-card h3 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    .shop-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .shop-price {
+      margin-top: auto;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .shop-action {
+      width: 100%;
+      height: 46px;
+      border: none;
+      border-radius: 12px;
+      background: var(--purple);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .shop-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pool-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .pool-badge {
+      border: 1px solid var(--border);
+      background: #202127;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+
+    .shop-result {
+      margin-top: 20px;
+      background: linear-gradient(180deg, var(--panel-2), #16171b);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      min-height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .shop-result.muted {
+      color: var(--muted);
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div class="shop-page-header">
-      <button id="backBtn" class="secondary-btn">Voltar</button>
+  <main class="container">
+    <section class="panel">
+      <div class="shop-header">
+        <a href="./index.html" class="shop-back">Voltar</a>
 
-      <div class="shop-page-title">
-        <h1>Loja</h1>
-        <p class="shop-gold-line">Ouro: <span id="gold">0</span></p>
+        <div class="shop-title-wrap">
+          <h1 class="shop-title">Loja</h1>
+          <div class="shop-gold">Ouro: <strong id="shopGoldValue">0</strong></div>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
       <div class="shop-tabs">
-        <button class="tab active" data-tab="diceTab">Dados</button>
-        <button class="tab" data-tab="cardsTab">Cartas</button>
-        <button class="tab" data-tab="unlockTab">Desbloqueios</button>
+        <button class="shop-tab active" data-tab="dados">Dados</button>
+        <button class="shop-tab" data-tab="cartas">Cartas</button>
+        <button class="shop-tab" data-tab="desbloqueios">Desbloqueios</button>
       </div>
 
-      <div class="shop-body">
-        <div id="diceTab" class="tab-content active">
-          <div class="shop-item">
-            <h3>d6</h3>
-            <p>1 - 6</p>
-            <button data-buy="dice6">Equipado</button>
-          </div>
+      <section id="tab-dados" class="shop-tab-panel active">
+        <div class="shop-grid">
+          <article class="shop-card">
+            <h3>Comprar um dado</h3>
+            <p>
+              Compra 1 dado aleatório entre todos os dados disponíveis no jogo.
+            </p>
 
-          <div class="shop-item">
-            <h3>d8</h3>
-            <p>1 - 8</p>
-            <button data-buy="dice8">250 ouro</button>
-          </div>
+            <div>
+              <strong>Pool atual:</strong>
+              <div id="dicePoolList" class="pool-list"></div>
+            </div>
 
-          <div class="shop-item">
-            <h3>d10</h3>
-            <p>1 - 10</p>
-            <button data-buy="dice10">800 ouro</button>
-          </div>
+            <div class="shop-price">250 ouro</div>
+            <button id="buyRandomDieButton" class="shop-action">Comprar dado aleatório</button>
+          </article>
         </div>
+      </section>
 
-        <div id="cardsTab" class="tab-content">
-          <div class="shop-item">
-            <h3>Sorte</h3>
-            <p>+1 em toda rolagem</p>
-            <button data-buy="luck">80 ouro</button>
-          </div>
+      <section id="tab-cartas" class="shop-tab-panel">
+        <div class="shop-grid">
+          <article class="shop-card">
+            <h3>Comprar uma carta</h3>
+            <p>
+              Compra 1 carta aleatória entre todas as cartas disponíveis no jogo.
+            </p>
 
-          <div class="shop-item">
-            <h3>Crítico</h3>
-            <p>Se cair no máximo, dobra</p>
-            <button data-buy="crit">120 ouro</button>
-          </div>
+            <div>
+              <strong>Pool atual:</strong>
+              <div id="cardPoolList" class="pool-list"></div>
+            </div>
 
-          <div class="shop-item">
-            <h3>Par</h3>
-            <p>Se cair número par, x2</p>
-            <button data-buy="even">200 ouro</button>
-          </div>
+            <div class="shop-price">180 ouro</div>
+            <button id="buyRandomCardButton" class="shop-action">Comprar carta aleatória</button>
+          </article>
         </div>
+      </section>
 
-        <div id="unlockTab" class="tab-content">
-          <div class="shop-item">
-            <h3>Auto Roll</h3>
-            <p>Rola automaticamente</p>
-            <button data-buy="autoroll">300 ouro</button>
-          </div>
+      <section id="tab-desbloqueios" class="shop-tab-panel">
+        <div class="shop-grid">
+          <article class="shop-card">
+            <h3>Desbloqueios</h3>
+            <p>
+              Essa aba vai servir para upgrades permanentes depois, como:
+              Auto Roll, Offline Gain, mais slots, melhorias de raridade e outras maldades viciantes.
+            </p>
 
-          <div class="shop-item">
-            <h3>Ganho Offline</h3>
-            <p>Receba ouro enquanto estiver fora</p>
-            <button data-buy="offline">600 ouro</button>
-          </div>
+            <div class="shop-price">Em breve</div>
+            <button class="shop-action" disabled>Indisponível por enquanto</button>
+          </article>
         </div>
+      </section>
+
+      <div id="shopResult" class="shop-result muted">
+        Compre alguma coisa e vamos ver se a sorte vem trabalhar hoje.
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script type="module" src="./js/shop.js"></script>
 </body>

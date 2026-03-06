@@ -1,203 +1,152 @@
 import {
   createInitialGameState,
+  DICE_DATA,
+  CARD_DATA,
+  SHOP_DATA,
   openRandomDicePack,
   openRandomCardPack
 } from "./gameData.js";
 
-const STORAGE_KEY = "diceCardsIdle_v04";
+const SAVE_KEY = "dice_cards_idle_save";
 
-const COSTS = {
-  dicePack: 100,
-  cardPack: 120,
-  autoroll: 300,
-  offline: 600
-};
+const shopGoldValue = document.getElementById("shopGoldValue");
+const buyRandomDieButton = document.getElementById("buyRandomDieButton");
+const buyRandomCardButton = document.getElementById("buyRandomCardButton");
+const shopResult = document.getElementById("shopResult");
+const dicePoolList = document.getElementById("dicePoolList");
+const cardPoolList = document.getElementById("cardPoolList");
 
-const goldEl = document.getElementById("gold");
-const backBtn = document.getElementById("backBtn");
-const tabs = document.querySelectorAll(".tab");
-const tabContents = document.querySelectorAll(".tab-content");
-const buyButtons = document.querySelectorAll("[data-buy]");
+const tabs = document.querySelectorAll(".shop-tab");
+const tabPanels = document.querySelectorAll(".shop-tab-panel");
 
-let game = loadGame();
+let state = loadGame();
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return createInitialGameState();
 
     const parsed = JSON.parse(raw);
-    return mergeWithInitialState(parsed);
+
+    return {
+      ...createInitialGameState(),
+      ...parsed,
+      inventory: {
+        ...createInitialGameState().inventory,
+        ...(parsed.inventory || {})
+      }
+    };
   } catch {
     return createInitialGameState();
   }
 }
 
-function mergeWithInitialState(save) {
-  const base = createInitialGameState();
-
-  return {
-    ...base,
-    ...save,
-    resources: {
-      ...base.resources,
-      ...(save.resources || {})
-    },
-    stats: {
-      ...base.stats,
-      ...(save.stats || {})
-    },
-    progression: {
-      ...base.progression,
-      ...(save.progression || {})
-    },
-    inventory: {
-      dice: Array.isArray(save.inventory?.dice) ? save.inventory.dice : base.inventory.dice,
-      cards: Array.isArray(save.inventory?.cards) ? save.inventory.cards : base.inventory.cards
-    },
-    equipped: {
-      diceSlots: Array.isArray(save.equipped?.diceSlots) ? save.equipped.diceSlots : base.equipped.diceSlots,
-      cardSlots: Array.isArray(save.equipped?.cardSlots) ? save.equipped.cardSlots : base.equipped.cardSlots
-    },
-    slots: {
-      ...base.slots,
-      ...(save.slots || {})
-    },
-    collection: {
-      ...base.collection,
-      ...(save.collection || {}),
-      milestones: {
-        ...base.collection.milestones,
-        ...(save.collection?.milestones || {})
-      },
-      bonuses: {
-        ...base.collection.bonuses,
-        ...(save.collection?.bonuses || {})
-      }
-    },
-    ui: {
-      ...base.ui,
-      ...(save.ui || {})
-    }
-  };
-}
-
 function saveGame() {
-  game.stats.lastSaveAt = Date.now();
-  game.stats.lastSeenAt = Date.now();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
 }
 
-function updateGold() {
-  goldEl.textContent = game.resources.gold;
+function formatRarity(rarity) {
+  const map = {
+    common: "Comum",
+    uncommon: "Incomum",
+    rare: "Rara",
+    epic: "Épica",
+    legendary: "Lendária"
+  };
+
+  return map[rarity] || rarity;
 }
 
-function updateShopButtons() {
-  buyButtons.forEach((btn) => {
-    const item = btn.dataset.buy;
+function renderGold() {
+  shopGoldValue.textContent = Math.floor(state.gold);
+  buyRandomDieButton.disabled = state.gold < SHOP_DATA.randomDiePrice;
+  buyRandomCardButton.disabled = state.gold < SHOP_DATA.randomCardPrice;
+}
 
-    if (item === "dice6") {
-      btn.textContent = "Inicial";
-      return;
-    }
+function renderPools() {
+  dicePoolList.innerHTML = "";
+  Object.values(DICE_DATA).forEach((die) => {
+    const badge = document.createElement("span");
+    badge.className = "pool-badge";
+    badge.textContent = `${die.name} (d${die.sides})`;
+    dicePoolList.appendChild(badge);
+  });
 
-    if (item === "dice8") {
-      btn.textContent = "Pack de dado";
-      return;
-    }
-
-    if (item === "dice10") {
-      btn.textContent = `${COSTS.dicePack} ouro`;
-      return;
-    }
-
-    if (item === "luck" || item === "crit" || item === "even") {
-      btn.textContent = `${COSTS.cardPack} ouro`;
-      return;
-    }
-
-    if (item === "autoroll") {
-      btn.textContent = game.progression.autoRollUnlocked ? "Comprado" : `${COSTS.autoroll} ouro`;
-      return;
-    }
-
-    if (item === "offline") {
-      btn.textContent = game.progression.offlineGainUnlocked ? "Comprado" : `${COSTS.offline} ouro`;
-    }
+  cardPoolList.innerHTML = "";
+  Object.values(CARD_DATA).forEach((card) => {
+    const badge = document.createElement("span");
+    badge.className = "pool-badge";
+    badge.textContent = `${card.name} (${formatRarity(card.rarity)})`;
+    cardPoolList.appendChild(badge);
   });
 }
 
-function updateUI() {
-  updateGold();
-  updateShopButtons();
+function showResult(message, muted = false) {
+  shopResult.textContent = message;
+  shopResult.classList.toggle("muted", muted);
 }
 
-function buyItem(item) {
-  switch (item) {
-    case "dice8":
-    case "dice10":
-      if (game.resources.gold < COSTS.dicePack) return false;
-      game.resources.gold -= COSTS.dicePack;
-      openRandomDicePack(game);
-      return true;
-
-    case "luck":
-    case "crit":
-    case "even":
-      if (game.resources.gold < COSTS.cardPack) return false;
-      game.resources.gold -= COSTS.cardPack;
-      openRandomCardPack(game);
-      return true;
-
-    case "autoroll":
-      if (game.progression.autoRollUnlocked) return false;
-      if (game.resources.gold < COSTS.autoroll) return false;
-      game.resources.gold -= COSTS.autoroll;
-      game.progression.autoRollUnlocked = true;
-      return true;
-
-    case "offline":
-      if (game.progression.offlineGainUnlocked) return false;
-      if (game.resources.gold < COSTS.offline) return false;
-      game.resources.gold -= COSTS.offline;
-      game.progression.offlineGainUnlocked = true;
-      return true;
-
-    default:
-      return false;
+function buyRandomDie() {
+  if (state.gold < SHOP_DATA.randomDiePrice) {
+    showResult("Ouro insuficiente para comprar um dado aleatório.");
+    return;
   }
+
+  state.gold -= SHOP_DATA.randomDiePrice;
+
+  const newDie = openRandomDicePack();
+  state.inventory.dice.push(newDie);
+
+  const dieData = DICE_DATA[newDie.baseId];
+
+  saveGame();
+  renderGold();
+
+  showResult(
+    `Você comprou 1 dado aleatório e recebeu: ${dieData.name} (${formatRarity(dieData.rarity)}) - d${dieData.sides}`
+  );
 }
 
-backBtn.addEventListener("click", () => {
-  window.location.href = "./index.html";
-});
+function buyRandomCard() {
+  if (state.gold < SHOP_DATA.randomCardPrice) {
+    showResult("Ouro insuficiente para comprar uma carta aleatória.");
+    return;
+  }
+
+  state.gold -= SHOP_DATA.randomCardPrice;
+
+  const newCard = openRandomCardPack();
+  state.inventory.cards.push(newCard);
+
+  const cardData = CARD_DATA[newCard.baseId];
+
+  saveGame();
+  renderGold();
+
+  showResult(
+    `Você comprou 1 carta aleatória e recebeu: ${cardData.name} (${formatRarity(cardData.rarity)})`
+  );
+}
+
+function activateTab(tabName) {
+  tabs.forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.tab === tabName);
+  });
+
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.id === `tab-${tabName}`);
+  });
+}
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
-    tabs.forEach((btn) => btn.classList.remove("active"));
-    tab.classList.add("active");
-
-    const targetId = tab.dataset.tab;
-
-    tabContents.forEach((content) => {
-      content.classList.remove("active");
-    });
-
-    const activeContent = document.getElementById(targetId);
-    if (activeContent) {
-      activeContent.classList.add("active");
-    }
+    activateTab(tab.dataset.tab);
   });
 });
 
-buyButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const bought = buyItem(btn.dataset.buy);
-    if (!bought) return;
+buyRandomDieButton.addEventListener("click", buyRandomDie);
+buyRandomCardButton.addEventListener("click", buyRandomCard);
 
-    updateUI();
-    saveGame();
-  });
-});
-
-updateUI();
+renderGold();
+renderPools();
+showResult("Compre alguma coisa e vamos ver se a sorte vem trabalhar hoje.", true);
