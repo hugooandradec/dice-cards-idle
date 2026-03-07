@@ -49,7 +49,7 @@ export const CARD_DATA = {
     description: "10% de chance de dobrar o ouro total da rolagem.",
     effect: {
       type: "critChance",
-      value: 0.10
+      value: 0.1
     }
   },
   card_luck: {
@@ -84,6 +84,11 @@ export const CARD_DATA = {
   }
 };
 
+export const SHOP_DATA = {
+  randomDiePrice: 250,
+  randomCardPrice: 180
+};
+
 export function createInitialGameState() {
   return {
     version: "0.3",
@@ -93,19 +98,45 @@ export function createInitialGameState() {
     inventory: {
       dice: [
         { uid: "die_1", baseId: "d6_basic" },
-        { uid: "die_2", baseId: "d6_lucky" },
-        { uid: "die_3", baseId: "d8_heavy" },
-        { uid: "die_4", baseId: "d10_sharp" },
-        { uid: "die_5", baseId: "d20_ancient" }
+        { uid: "die_2", baseId: "d8_heavy" },
+        { uid: "die_3", baseId: "d6_lucky" }
       ],
       cards: [
-        { uid: "card_1", baseId: "card_crit" },
-        { uid: "card_2", baseId: "card_luck" },
-        { uid: "card_3", baseId: "card_greed" },
-        { uid: "card_4", baseId: "card_focus" }
+        { uid: "card_1", baseId: "card_focus" },
+        { uid: "card_2", baseId: "card_greed" },
+        { uid: "card_3", baseId: "card_crit" },
+        { uid: "card_4", baseId: "card_luck" }
       ]
     },
-    equippedDice: ["die_1", "die_3", "die_2", null, null],
-    equippedCards: ["card_4", "card_3", "card_1", "card_2", null]
+    equippedDice: ["die_1", "die_2", "die_3", null, null],
+    equippedCards: ["card_1", "card_2", "card_3", "card_4", null]
+  };
+}
+
+function randomFromArray(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function createUid(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function openRandomDicePack() {
+  const allDiceIds = Object.keys(DICE_DATA);
+  const selectedBaseId = randomFromArray(allDiceIds);
+
+  return {
+    uid: createUid("die"),
+    baseId: selectedBaseId
+  };
+}
+
+export function openRandomCardPack() {
+  const allCardIds = Object.keys(CARD_DATA);
+  const selectedBaseId = randomFromArray(allCardIds);
+
+  return {
+    uid: createUid("card"),
+    baseId: selectedBaseId
   };
 }

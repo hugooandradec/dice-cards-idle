@@ -27,13 +27,16 @@ function loadGame() {
     if (!raw) return createInitialGameState();
 
     const parsed = JSON.parse(raw);
+    const initial = createInitialGameState();
 
     return {
-      ...createInitialGameState(),
+      ...initial,
       ...parsed,
       inventory: {
-        ...createInitialGameState().inventory,
-        ...(parsed.inventory || {})
+        ...initial.inventory,
+        ...(parsed.inventory || {}),
+        dice: Array.isArray(parsed.inventory?.dice) ? parsed.inventory.dice : initial.inventory.dice,
+        cards: Array.isArray(parsed.inventory?.cards) ? parsed.inventory.cards : initial.inventory.cards
       }
     };
   } catch {
@@ -54,7 +57,7 @@ function formatRarity(rarity) {
     legendary: "Lendária"
   };
 
-  return map[rarity] || rarity;
+  return map[rarity] || "Comum";
 }
 
 function renderGold() {
