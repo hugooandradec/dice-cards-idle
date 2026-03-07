@@ -8,6 +8,9 @@
   --purple: #7c2cff;
   --purple-hover: #8d46ff;
   --button-dark: #44444c;
+  --green-felt-1: #146c2d;
+  --green-felt-2: #0b4e20;
+  --green-felt-3: #083916;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -41,8 +44,8 @@ a {
 
 .title {
   text-align: center;
-  font-size: clamp(2.6rem, 4vw, 4rem);
-  margin: 0 0 22px;
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  margin: 0 0 24px;
   font-weight: 900;
 }
 
@@ -55,7 +58,7 @@ a {
   margin-bottom: 18px;
 }
 
-.main-panel {
+.top-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -91,14 +94,14 @@ a {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  min-height: 92px;
+  gap: 10px;
+  min-height: 90px;
 }
 
 .roll-slot-box,
 .roll-total-box {
-  width: 74px;
-  height: 74px;
+  width: 72px;
+  height: 72px;
   border-radius: 16px;
   border: 1px solid var(--border);
   background: linear-gradient(180deg, #1f2024, #18191d);
@@ -106,7 +109,6 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
 }
 
 .roll-slot-box.empty {
@@ -130,7 +132,7 @@ a {
   font-size: 2rem;
   font-weight: 900;
   color: var(--muted);
-  padding: 0 2px;
+  padding: 0 4px;
 }
 
 .roll-gain {
@@ -183,167 +185,249 @@ a {
   font-size: 1rem;
 }
 
-.build-sections {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  align-items: start;
+.table-panel {
+  padding: 28px;
 }
 
-.build-panel {
-  min-height: 100%;
-}
-
-.section-header {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 18px;
-}
-
-.section-header h2 {
-  margin: 0;
-  text-align: center;
-  font-size: 1.7rem;
-}
-
-.section-subtitle {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.dice-slots,
-.card-slots {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.dice-slot {
-  background: linear-gradient(180deg, var(--panel-2), #16171b);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px;
-  min-height: 250px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: space-between;
-}
-
-.card-slot {
-  background: linear-gradient(180deg, var(--panel-2), #16171b);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px;
-  min-height: 290px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: space-between;
-}
-
-.dice-slot-header,
-.card-slot-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.slot-label {
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-}
-
-.rarity-badge {
-  font-size: 0.68rem;
-  padding: 4px 8px;
+.table-area {
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, transparent 45%),
+    radial-gradient(circle at center, var(--green-felt-1) 0%, var(--green-felt-2) 62%, var(--green-felt-3) 100%);
   border-radius: 999px;
+  padding: 40px 30px;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.35),
+    inset 0 0 12px rgba(255,255,255,0.04),
+    0 16px 40px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.loadout-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.loadout-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.felt-divider {
+  height: 34px;
+}
+
+.slot-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.slot-chip {
+  width: 86px;
+  height: 86px;
+  background: linear-gradient(180deg, #1f2024, #18191d);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.5rem;
+  cursor: pointer;
+  position: relative;
+  text-align: center;
+  padding: 8px;
+  line-height: 1.1;
+}
+
+.slot-chip.card {
+  font-size: 0.95rem;
+  width: 100px;
+  height: 128px;
+  border-radius: 16px;
+}
+
+.slot-chip.empty {
+  opacity: 0.55;
+}
+
+.slot-chip:hover {
+  transform: translateY(-2px);
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.shop-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+}
+
+.shop-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+}
+
+.shop-gold {
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+
+.shop-gold strong {
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.shop-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.shop-tab {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
   background: #2a2b31;
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.08);
-  white-space: nowrap;
-}
-
-.dice-face {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  display: grid;
-  place-items: center;
-  font-size: 1.4rem;
-  font-weight: 900;
-  background: #202127;
-}
-
-.card-art {
-  width: 100%;
-  aspect-ratio: 5 / 7;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #24252d, #1b1c21);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  text-align: center;
-  font-size: 1.15rem;
-  font-weight: 900;
-}
-
-.slot-name {
-  text-align: center;
   font-weight: 800;
-  font-size: 1.05rem;
-  line-height: 1.25;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.slot-desc {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.35;
-  min-height: 56px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.slot-empty {
-  color: #7d7f8d;
-  font-style: italic;
-}
-
-.slot-mini-btn {
-  width: 100%;
-  height: 40px;
-  border: none;
-  border-radius: 10px;
   cursor: pointer;
-  font-weight: 800;
-  background: #4a4b56;
-  color: #fff;
 }
 
-.slot-mini-btn.equip {
+.shop-tab.active {
   background: var(--purple);
 }
 
-.slot-mini-btn.unequip {
-  background: #5b5d66;
+.shop-tab-panel {
+  display: none;
+}
+
+.shop-tab-panel.active {
+  display: block;
+}
+
+.shop-grid,
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.shop-card,
+.inventory-card,
+.modal-card {
+  background: linear-gradient(180deg, var(--panel-2), #16171b);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shop-card h3,
+.inventory-card h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.shop-card p,
+.inventory-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.shop-price {
+  margin-top: auto;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.shop-action,
+.inventory-action,
+.modal-card button {
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: var(--purple);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.shop-action:disabled,
+.inventory-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pool-badge,
+.stack-badge,
+.rarity-badge {
+  border: 1px solid var(--border);
+  background: #202127;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inventory-topline,
+.modal-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shop-result {
+  margin-top: 20px;
+  background: linear-gradient(180deg, var(--panel-2), #16171b);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.shop-result.muted {
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .modal.hidden {
@@ -402,45 +486,11 @@ a {
 
 .modal-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
 
-.modal-card {
-  background: linear-gradient(180deg, #1b1c21, #15161a);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.modal-card-title {
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-.modal-card-desc {
-  color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.4;
-  min-height: 48px;
-}
-
-.modal-card button {
-  margin-top: auto;
-  width: 100%;
-  height: 40px;
-  border: none;
-  border-radius: 10px;
-  background: var(--purple);
-  color: #fff;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.empty-modal {
+.empty-state {
   color: var(--muted);
   text-align: center;
   padding: 20px 10px;
@@ -466,59 +516,32 @@ a {
   background: #c97a00;
 }
 
-@media (max-width: 1100px) {
-  .build-sections {
-    grid-template-columns: 1fr;
+@media (max-width: 700px) {
+  .table-area {
+    border-radius: 36px;
+    padding: 28px 16px;
   }
 
-  .dice-slots,
-  .card-slots {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+  .slot-chip {
+    width: 70px;
+    height: 70px;
+    font-size: 1.2rem;
   }
-}
 
-@media (max-width: 900px) {
-  .dice-slots,
-  .card-slots {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .dice-slots,
-  .card-slots {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .slot-chip.card {
+    width: 82px;
+    height: 108px;
+    font-size: 0.82rem;
   }
 
   .roll-slot-box,
   .roll-total-box {
-    width: 64px;
-    height: 64px;
+    width: 62px;
+    height: 62px;
   }
 
   .roll-slot-value,
   .roll-total-value {
-    font-size: 1.45rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 14px 10px 30px;
-  }
-
-  .panel {
-    padding: 16px;
-    border-radius: 18px;
-  }
-
-  .dice-slots,
-  .card-slots {
-    grid-template-columns: 1fr;
-  }
-
-  .btn {
-    flex: 1;
-    min-width: 0;
+    font-size: 1.4rem;
   }
 }

@@ -1,6 +1,16 @@
-import { createInitialGameState, DICE_DATA, CARD_DATA } from "./gameData.js";
-
-const SAVE_KEY = "dice_cards_idle_save";
+import { DICE_DATA, CARD_DATA } from "./gameData.js";
+import {
+  loadGame,
+  saveGame,
+  getOwnedDieByUid,
+  getOwnedCardByUid,
+  getEquippedCardEffects,
+  stackInventoryItems,
+  getDisplayData,
+  countEquippedByBaseId,
+  formatRarity,
+  getRarityClass
+} from "./helpers.js";
 
 let state = loadGame();
 
@@ -18,57 +28,6 @@ const modalList = document.getElementById("modalList");
 const closeModalButton = document.getElementById("closeModalButton");
 
 let currentModalContext = null;
-
-function loadGame() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return createInitialGameState();
-
-    const parsed = JSON.parse(raw);
-
-    return {
-      ...createInitialGameState(),
-      ...parsed
-    };
-  } catch {
-    return createInitialGameState();
-  }
-}
-
-function saveGame() {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-}
-
-function getRarityClass(rarity) {
-  return `rarity-${rarity || "common"}`;
-}
-
-function formatRarity(rarity) {
-  const map = {
-    common: "Comum",
-    uncommon: "Incomum",
-    rare: "Rara",
-    epic: "Épica",
-    legendary: "Lendária"
-  };
-  return map[rarity] || "Comum";
-}
-
-function getOwnedDieByUid(uid) {
-  return state.inventory.dice.find((item) => item.uid === uid) || null;
-}
-
-function getOwnedCardByUid(uid) {
-  return state.inventory.cards.find((item) => item.uid === uid) || null;
-}
-
-function getEquippedCardEffects() {
-  return state.equippedCards
-    .map((uid) => getOwnedCardByUid(uid))
-    .filter(Boolean)
-    .map((card) => CARD_DATA[card.baseId]?.effect)
-    .filter(Boolean);
-}
 
 function renderTop() {
   goldValue.textContent = Math.floor(state.gold);
@@ -113,46 +72,23 @@ function renderDiceSlots() {
   diceSlotsEl.innerHTML = "";
 
   state.equippedDice.forEach((uid, index) => {
-    const slot = document.createElement("div");
-    slot.className = "dice-slot";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "slot-chip";
+    button.dataset.action = "dice-slot";
+    button.dataset.slotIndex = index;
 
-    if (uid) {
-      const dieItem = getOwnedDieByUid(uid);
-      const dieData = dieItem ? DICE_DATA[dieItem.baseId] : null;
-
-      slot.innerHTML = `
-        <div class="dice-slot-header">
-          <span class="slot-label">Slot ${index + 1}</span>
-          <span class="rarity-badge ${getRarityClass(dieData?.rarity)}">${formatRarity(dieData?.rarity)}</span>
-        </div>
-
-        <div class="dice-face">${dieData ? `d${dieData.sides}` : "?"}</div>
-
-        <div class="slot-name">${dieData?.name || "Dado"}</div>
-        <div class="slot-desc">${dieData?.description || ""}</div>
-
-        <button class="slot-mini-btn unequip" data-dice-slot="${index}" data-action="unequip-die">
-          Desequipar
-        </button>
-      `;
+    if (!uid) {
+      button.classList.add("empty");
+      button.textContent = "+";
     } else {
-      slot.innerHTML = `
-        <div class="dice-slot-header">
-          <span class="slot-label">Slot ${index + 1}</span>
-          <span class="rarity-badge">Vazio</span>
-        </div>
-
-        <div class="dice-face">?</div>
-        <div class="slot-name slot-empty">Sem dado</div>
-        <div class="slot-desc slot-empty">Nenhum dado equipado neste slot.</div>
-
-        <button class="slot-mini-btn equip" data-dice-slot="${index}" data-action="open-dice-modal">
-          Equipar
-        </button>
-      `;
+      const dieItem = getOwnedDieByUid(state, uid);
+      const dieData = dieItem ? DICE_DATA[dieItem.baseId] : null;
+      button.textContent = dieData ? `d${dieData.sides}` : "?";
+      button.title = dieData?.name || "Dado";
     }
 
-    diceSlotsEl.appendChild(slot);
+    diceSlotsEl.appendChild(button);
   });
 }
 
@@ -160,47 +96,23 @@ function renderCardSlots() {
   cardSlotsEl.innerHTML = "";
 
   state.equippedCards.forEach((uid, index) => {
-    const slot = document.createElement("div");
-    slot.className = "card-slot";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "slot-chip card";
+    button.dataset.action = "card-slot";
+    button.dataset.slotIndex = index;
 
-    if (uid) {
-      const cardItem = getOwnedCardByUid(uid);
-      const cardData = cardItem ? CARD_DATA[cardItem.baseId] : null;
-
-      slot.innerHTML = `
-        <div class="card-slot-header">
-          <span class="slot-label">Slot ${index + 1}</span>
-          <span class="rarity-badge ${getRarityClass(cardData?.rarity)}">${formatRarity(cardData?.rarity)}</span>
-        </div>
-
-        <div class="card-art">${cardData?.name || "Carta"}</div>
-
-        <div class="slot-name">${cardData?.name || "Carta"}</div>
-        <div class="slot-desc">${cardData?.description || ""}</div>
-
-        <button class="slot-mini-btn unequip" data-card-slot="${index}" data-action="unequip-card">
-          Desequipar
-        </button>
-      `;
+    if (!uid) {
+      button.classList.add("empty");
+      button.textContent = "+";
     } else {
-      slot.innerHTML = `
-        <div class="card-slot-header">
-          <span class="slot-label">Slot ${index + 1}</span>
-          <span class="rarity-badge">Vazio</span>
-        </div>
-
-        <div class="card-art slot-empty">Sem Carta</div>
-
-        <div class="slot-name slot-empty">Slot vazio</div>
-        <div class="slot-desc slot-empty">Clique em equipar para escolher uma carta do inventário.</div>
-
-        <button class="slot-mini-btn equip" data-card-slot="${index}" data-action="open-card-modal">
-          Equipar
-        </button>
-      `;
+      const cardItem = getOwnedCardByUid(state, uid);
+      const cardData = cardItem ? CARD_DATA[cardItem.baseId] : null;
+      button.textContent = cardData?.name || "?";
+      button.title = cardData?.name || "Carta";
     }
 
-    cardSlotsEl.appendChild(slot);
+    cardSlotsEl.appendChild(button);
   });
 }
 
@@ -220,7 +132,7 @@ function rollDie(sides) {
 }
 
 function processRoll() {
-  const effects = getEquippedCardEffects();
+  const effects = getEquippedCardEffects(state);
 
   let flatPerDie = 0;
   let critChance = 0;
@@ -243,7 +155,7 @@ function processRoll() {
       return;
     }
 
-    const dieItem = getOwnedDieByUid(uid);
+    const dieItem = getOwnedDieByUid(state, uid);
     const dieData = dieItem ? DICE_DATA[dieItem.baseId] : null;
 
     if (!dieData) {
@@ -266,11 +178,8 @@ function processRoll() {
 
   if (Math.random() < critChance) {
     total *= 2;
-
     for (let i = 0; i < slotResults.length; i += 1) {
-      if (slotResults[i] != null) {
-        slotResults[i] *= 2;
-      }
+      if (slotResults[i] != null) slotResults[i] *= 2;
     }
   }
 
@@ -288,16 +197,13 @@ function processRoll() {
 
     const adjustedTotal = slotResults.reduce((sum, value) => sum + (Number(value) || 0), 0);
     const diff = total - adjustedTotal;
+    const lastFilledIndex = [...slotResults]
+      .map((value, index) => ({ value, index }))
+      .filter((item) => item.value != null)
+      .pop()?.index;
 
-    if (diff !== 0) {
-      const lastFilledIndex = [...slotResults]
-        .map((value, index) => ({ value, index }))
-        .filter((item) => item.value != null)
-        .pop()?.index;
-
-      if (lastFilledIndex != null) {
-        slotResults[lastFilledIndex] += diff;
-      }
+    if (diff !== 0 && lastFilledIndex != null) {
+      slotResults[lastFilledIndex] += diff;
     }
   }
 
@@ -305,91 +211,115 @@ function processRoll() {
   state.lastRollGain = total;
   state.lastRollSlots = slotResults;
 
-  saveGame();
+  saveGame(state);
   renderAll();
 }
 
-function getAvailableCardsToEquip() {
-  const equippedSet = new Set(state.equippedCards.filter(Boolean));
-  return state.inventory.cards.filter((card) => !equippedSet.has(card.uid));
-}
+function openEquipModal(type, slotIndex) {
+  currentModalContext = { type, slotIndex };
+  modalTitle.textContent = type === "dice"
+    ? `Equipar dado no Slot ${slotIndex + 1}`
+    : `Equipar carta no Slot ${slotIndex + 1}`;
 
-function getAvailableDiceToEquip() {
-  const equippedSet = new Set(state.equippedDice.filter(Boolean));
-  return state.inventory.dice.filter((die) => !equippedSet.has(die.uid));
-}
+  const currentUid = type === "dice"
+    ? state.equippedDice[slotIndex]
+    : state.equippedCards[slotIndex];
 
-function openCardModal(slotIndex) {
-  currentModalContext = { type: "card", slotIndex };
-  modalTitle.textContent = `Equipar carta no Slot ${slotIndex + 1}`;
-
-  const availableCards = getAvailableCardsToEquip();
-
-  if (!availableCards.length) {
-    modalList.innerHTML = `<div class="empty-modal">Nenhuma carta disponível para equipar.</div>`;
-    equipModal.classList.remove("hidden");
-    return;
-  }
+  const stacked = stackInventoryItems(type === "dice" ? state.inventory.dice : state.inventory.cards);
 
   modalList.innerHTML = "";
 
-  availableCards.forEach((cardItem) => {
-    const cardData = CARD_DATA[cardItem.baseId];
-    const cardEl = document.createElement("div");
-    cardEl.className = "modal-card";
+  if (currentUid) {
+    const currentItem = type === "dice"
+      ? getOwnedDieByUid(state, currentUid)
+      : getOwnedCardByUid(state, currentUid);
 
-    cardEl.innerHTML = `
-      <div class="dice-slot-header">
-        <span class="modal-card-title">${cardData?.name || "Carta"}</span>
-        <span class="rarity-badge ${getRarityClass(cardData?.rarity)}">${formatRarity(cardData?.rarity)}</span>
+    const currentData = currentItem ? getDisplayData(type, currentItem.baseId) : null;
+
+    const currentCard = document.createElement("div");
+    currentCard.className = "modal-card";
+    currentCard.innerHTML = `
+      <div class="modal-topline">
+        <strong>Equipado atualmente</strong>
+        <span class="rarity-badge ${getRarityClass(currentData?.rarity)}">${formatRarity(currentData?.rarity)}</span>
       </div>
-
-      <div class="modal-card-desc">${cardData?.description || ""}</div>
-      <button data-equip-card-uid="${cardItem.uid}">Equipar</button>
+      <div><strong>${currentData?.name || "Item"}</strong></div>
+      <div>${currentData?.description || ""}</div>
+      <button data-action="unequip-current">Desequipar</button>
     `;
+    modalList.appendChild(currentCard);
+  }
 
-    modalList.appendChild(cardEl);
+  if (!stacked.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Nenhum item disponível.";
+    modalList.appendChild(empty);
+  }
+
+  stacked.forEach((entry) => {
+    const data = getDisplayData(type, entry.baseId);
+    const equippedCount = countEquippedByBaseId(state, type, entry.baseId);
+    const availableCount = entry.quantity - equippedCount + (currentUid && ((type === "dice" ? getOwnedDieByUid(state, currentUid) : getOwnedCardByUid(state, currentUid))?.baseId === entry.baseId) ? 1 : 0);
+
+    const card = document.createElement("div");
+    card.className = "modal-card";
+    card.innerHTML = `
+      <div class="modal-topline">
+        <strong>${data?.name || "Item"}</strong>
+        <span class="rarity-badge ${getRarityClass(data?.rarity)}">${formatRarity(data?.rarity)}</span>
+      </div>
+      <div>${type === "dice" ? `d${data?.sides}` : data?.description || ""}</div>
+      <div class="pool-list">
+        <span class="stack-badge">Total x${entry.quantity}</span>
+        <span class="stack-badge">Disponível x${Math.max(availableCount, 0)}</span>
+      </div>
+      <button data-action="equip-stack" data-type="${type}" data-base-id="${entry.baseId}" ${availableCount <= 0 ? "disabled" : ""}>
+        Equipar
+      </button>
+    `;
+    modalList.appendChild(card);
   });
 
   equipModal.classList.remove("hidden");
 }
 
-function openDiceModal(slotIndex) {
-  currentModalContext = { type: "dice", slotIndex };
-  modalTitle.textContent = `Equipar dado no Slot ${slotIndex + 1}`;
+function equipFromStack(type, baseId) {
+  if (!currentModalContext || currentModalContext.type !== type) return;
 
-  const availableDice = getAvailableDiceToEquip();
+  const slotIndex = currentModalContext.slotIndex;
+  const currentSlots = type === "dice" ? state.equippedDice : state.equippedCards;
+  const inventory = type === "dice" ? state.inventory.dice : state.inventory.cards;
+  const getOwned = type === "dice" ? getOwnedDieByUid : getOwnedCardByUid;
 
-  if (!availableDice.length) {
-    modalList.innerHTML = `<div class="empty-modal">Nenhum dado disponível para equipar.</div>`;
-    equipModal.classList.remove("hidden");
-    return;
+  const currentUid = currentSlots[slotIndex];
+  const usedUids = new Set(currentSlots.filter(Boolean));
+
+  if (currentUid) usedUids.delete(currentUid);
+
+  const candidate = inventory.find((item) => item.baseId === baseId && !usedUids.has(item.uid));
+
+  if (!candidate) return;
+
+  currentSlots[slotIndex] = candidate.uid;
+
+  saveGame(state);
+  closeModal();
+  renderAll();
+}
+
+function unequipCurrent() {
+  if (!currentModalContext) return;
+
+  if (currentModalContext.type === "dice") {
+    state.equippedDice[currentModalContext.slotIndex] = null;
+  } else {
+    state.equippedCards[currentModalContext.slotIndex] = null;
   }
 
-  modalList.innerHTML = "";
-
-  availableDice.forEach((dieItem) => {
-    const dieData = DICE_DATA[dieItem.baseId];
-    const dieEl = document.createElement("div");
-    dieEl.className = "modal-card";
-
-    dieEl.innerHTML = `
-      <div class="dice-slot-header">
-        <span class="modal-card-title">${dieData?.name || "Dado"}</span>
-        <span class="rarity-badge ${getRarityClass(dieData?.rarity)}">${formatRarity(dieData?.rarity)}</span>
-      </div>
-
-      <div class="modal-card-desc">
-        ${dieData?.description || ""}<br>
-        <strong>d${dieData?.sides || 6}</strong>
-      </div>
-      <button data-equip-dice-uid="${dieItem.uid}">Equipar</button>
-    `;
-
-    modalList.appendChild(dieEl);
-  });
-
-  equipModal.classList.remove("hidden");
+  saveGame(state);
+  closeModal();
+  renderAll();
 }
 
 function closeModal() {
@@ -397,87 +327,40 @@ function closeModal() {
   currentModalContext = null;
 }
 
-function equipCard(cardUid) {
-  if (!currentModalContext || currentModalContext.type !== "card") return;
-
-  const { slotIndex } = currentModalContext;
-  state.equippedCards[slotIndex] = cardUid;
-
-  saveGame();
-  renderAll();
-  closeModal();
-}
-
-function equipDie(dieUid) {
-  if (!currentModalContext || currentModalContext.type !== "dice") return;
-
-  const { slotIndex } = currentModalContext;
-  state.equippedDice[slotIndex] = dieUid;
-
-  saveGame();
-  renderAll();
-  closeModal();
-}
-
-function unequipCard(slotIndex) {
-  state.equippedCards[slotIndex] = null;
-  saveGame();
-  renderAll();
-}
-
-function unequipDie(slotIndex) {
-  state.equippedDice[slotIndex] = null;
-  saveGame();
-  renderAll();
-}
-
 rollButton.addEventListener("click", processRoll);
 
-cardSlotsEl.addEventListener("click", (event) => {
-  const action = event.target.dataset.action;
-  const slotIndex = Number(event.target.dataset.cardSlot);
-
-  if (action === "open-card-modal") {
-    openCardModal(slotIndex);
-  }
-
-  if (action === "unequip-card") {
-    unequipCard(slotIndex);
-  }
+diceSlotsEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action='dice-slot']");
+  if (!button) return;
+  openEquipModal("dice", Number(button.dataset.slotIndex));
 });
 
-diceSlotsEl.addEventListener("click", (event) => {
-  const action = event.target.dataset.action;
-  const slotIndex = Number(event.target.dataset.diceSlot);
-
-  if (action === "open-dice-modal") {
-    openDiceModal(slotIndex);
-  }
-
-  if (action === "unequip-die") {
-    unequipDie(slotIndex);
-  }
+cardSlotsEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action='card-slot']");
+  if (!button) return;
+  openEquipModal("card", Number(button.dataset.slotIndex));
 });
 
 modalList.addEventListener("click", (event) => {
-  const cardUid = event.target.dataset.equipCardUid;
-  const diceUid = event.target.dataset.equipDiceUid;
+  const button = event.target.closest("button");
+  if (!button) return;
 
-  if (cardUid) {
-    equipCard(cardUid);
+  const action = button.dataset.action;
+
+  if (action === "unequip-current") {
+    unequipCurrent();
+    return;
   }
 
-  if (diceUid) {
-    equipDie(diceUid);
+  if (action === "equip-stack") {
+    equipFromStack(button.dataset.type, button.dataset.baseId);
   }
 });
 
 closeModalButton.addEventListener("click", closeModal);
 
 equipModal.addEventListener("click", (event) => {
-  if (event.target.dataset.closeModal === "true") {
-    closeModal();
-  }
+  if (event.target.dataset.closeModal === "true") closeModal();
 });
 
 renderAll();

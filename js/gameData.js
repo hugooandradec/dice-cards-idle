@@ -4,40 +4,35 @@ export const DICE_DATA = {
     name: "Dado Básico",
     sides: 6,
     rarity: "common",
-    description: "Um d6 simples. Sem bônus extras.",
-    icon: "d6"
+    description: "Um d6 simples. Sem bônus extras."
   },
   d6_lucky: {
     id: "d6_lucky",
     name: "Dado da Sorte",
     sides: 6,
     rarity: "uncommon",
-    description: "Dado confiável para builds de ouro constante.",
-    icon: "d6"
+    description: "Dado confiável para builds de ouro constante."
   },
   d8_heavy: {
     id: "d8_heavy",
     name: "Dado Pesado",
     sides: 8,
     rarity: "rare",
-    description: "Tem mais lados, aumentando o teto da rolagem.",
-    icon: "d8"
+    description: "Tem mais lados, aumentando o teto da rolagem."
   },
   d10_sharp: {
     id: "d10_sharp",
     name: "Dado Afiado",
     sides: 10,
     rarity: "epic",
-    description: "Um dado mais raro, com rolagens mais altas.",
-    icon: "d10"
+    description: "Um dado mais raro, com rolagens mais altas."
   },
   d20_ancient: {
     id: "d20_ancient",
     name: "Dado Ancestral",
     sides: 20,
     rarity: "legendary",
-    description: "Um monstro de build. Alto teto de ouro.",
-    icon: "d20"
+    description: "Um monstro de build. Alto teto de ouro."
   }
 };
 

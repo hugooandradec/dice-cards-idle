@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventário - Dice & Cards Idle</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="panel">
+      <div class="shop-header">
+        <a href="./index.html" class="btn btn-secondary">Voltar</a>
+
+        <div class="shop-title-wrap">
+          <h1 class="shop-title">Inventário</h1>
+          <div class="shop-gold">Ouro: <strong id="inventoryGoldValue">0</strong></div>
+        </div>
+      </div>
+
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-tab="dados">Dados</button>
+        <button class="shop-tab" data-tab="cartas">Cartas</button>
+      </div>
+
+      <section id="inventory-tab-dados" class="shop-tab-panel active">
+        <div id="inventoryDiceList" class="inventory-grid"></div>
+      </section>
+
+      <section id="inventory-tab-cartas" class="shop-tab-panel">
+        <div id="inventoryCardList" class="inventory-grid"></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./js/inventory.js"></script>
+</body>
+</html>

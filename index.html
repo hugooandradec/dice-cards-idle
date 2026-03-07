@@ -10,7 +10,7 @@
   <main class="container">
     <h1 class="title">Dice & Cards Idle</h1>
 
-    <section class="panel main-panel">
+    <section class="panel top-panel">
       <div class="gold-box">
         <span class="label">Ouro</span>
         <strong id="goldValue">0</strong>
@@ -25,29 +25,26 @@
       <div class="actions">
         <button id="rollButton" class="btn btn-primary">Rolar</button>
         <a href="./shop.html" class="btn btn-secondary">Loja</a>
+        <a href="./inventory.html" class="btn btn-secondary">Inventário</a>
       </div>
 
       <div class="version">Protótipo 0.3</div>
     </section>
 
-    <section class="build-sections">
-      <section class="panel build-panel">
-        <div class="section-header">
-          <h2>Dados Ativos</h2>
-          <span class="section-subtitle">Todos os dados equipados rolam juntos</span>
+    <section class="panel table-panel">
+      <div class="table-area">
+        <div class="loadout-section">
+          <h2 class="loadout-title">🎲 Dados</h2>
+          <div id="diceSlots" class="slot-row"></div>
         </div>
 
-        <div id="diceSlots" class="dice-slots"></div>
-      </section>
+        <div class="felt-divider"></div>
 
-      <section class="panel build-panel">
-        <div class="section-header">
-          <h2>Cartas Ativas</h2>
-          <span class="section-subtitle">Até 5 cartas equipadas</span>
+        <div class="loadout-section">
+          <h2 class="loadout-title">🃏 Cartas</h2>
+          <div id="cardSlots" class="slot-row card-row"></div>
         </div>
-
-        <div id="cardSlots" class="card-slots"></div>
-      </section>
+      </div>
     </section>
   </main>
 
